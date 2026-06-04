@@ -1,22 +1,44 @@
 {
   "name": "chapra-basket",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
+  "description": "Chapra Basket - Har Zaroorat, Aapke Ghar Tak",
   "dependencies": {
-    "expo": "~56.0.8",
-    "expo-status-bar": "~56.0.4",
-    "react": "19.2.3",
-    "react-native": "0.85.3"
+    "@expo-google-fonts/be-vietnam-pro": "^0.4.1",
+    "@gorhom/bottom-sheet": "^5.1.1",
+    "@reduxjs/toolkit": "^2.3.0",
+    "@types/react": "~19.2.10",
+    "expo": "~55.0.0",
+    "expo-blur": "~55.0.14",
+    "expo-font": "~55.0.8",
+    "expo-haptics": "~55.0.14",
+    "expo-image": "~55.0.11",
+    "expo-linear-gradient": "~55.0.14",
+    "expo-linking": "~55.0.15",
+    "expo-location": "~55.1.10",
+    "expo-notifications": "~55.0.23",
+    "expo-router": "~55.0.16",
+    "expo-splash-screen": "~55.0.21",
+    "expo-system-ui": "~55.0.18",
+    "lottie-react-native": "~7.3.4",
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-reanimated": "4.2.1",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-svg": "15.15.3",
+    "react-redux": "^9.1.0"
   },
   "devDependencies": {
-    "@types/react": "~19.2.2",
-    "typescript": "~6.0.3"
+    "@babel/core": "^7.25.2",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "typescript": "~5.9.2"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "ts-check": "tsc --noEmit"
   },
   "private": true
 }
