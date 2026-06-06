@@ -107,4 +107,8 @@ export {
   Users,
   Building2,
   Home,
+  Smartphone,
+  Banknote,
+  PartyPopper,
+  Timer,
 } from 'lucide-react-native';

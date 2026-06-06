@@ -1,78 +1,149 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import {
+  View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions,
+} from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, TextStyles, Radius, Spacing, Shadows } from '../../src/theme';
+import { Colors, Radius, Spacing } from '../../src/theme';
 import { Button } from '../../src/components/ui/Button';
+import {
+  CheckCircle, Package, Bike, Navigation,
+  Home, ShoppingBag, PartyPopper,
+} from '../../src/components/ui/Icon';
 
+const { width } = Dimensions.get('window');
+
+// ─── Timeline data ────────────────────────────────────────────────────────────
+const TIMELINE = [
+  { Icon: CheckCircle, label: 'Order Confirmed',   sublabel: 'Just now',    done: true  },
+  { Icon: Package,     label: 'Rider Assigned',    sublabel: '~5 min',      done: false },
+  { Icon: Bike,        label: 'Out for Delivery',  sublabel: '~15 min',     done: false },
+  { Icon: Navigation,  label: 'Delivered',         sublabel: '~28 min',     done: false },
+];
+
+// ─── Confetti dots (decorative) ───────────────────────────────────────────────
+const CONFETTI_COLORS = ['#FF6B00', '#FFE500', '#00CC66', '#4DA6FF', '#FF4D6D', '#A855F7'];
+function ConfettiDot({ index }: { index: number }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1, duration: 1200 + index * 80,
+      delay: index * 100, useNativeDriver: true,
+    }).start();
+  }, []);
+  const x = ((index * 73) % width) - width / 2;
+  const size = 6 + (index % 3) * 4;
+  return (
+    <Animated.View style={{
+      position: 'absolute', top: anim.interpolate({ inputRange: [0, 1], outputRange: [0, 500] }) as any,
+      left: '50%', marginLeft: x, width: size, height: size,
+      borderRadius: size / 2, backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+      opacity: anim.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] }),
+    }} />
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function OrderConfirmedScreen() {
-  const scale = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const slideY = useRef(new Animated.Value(40)).current;
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const slideY = useRef(new Animated.Value(50)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Pop-in then content slides up
     Animated.sequence([
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 60, friction: 7 }),
+      Animated.spring(scaleAnim, {
+        toValue: 1, useNativeDriver: true, tension: 55, friction: 6,
+      }),
       Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.timing(slideY, { toValue: 0, duration: 400, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 1, duration: 450, useNativeDriver: true }),
+        Animated.timing(slideY, { toValue: 0, duration: 450, useNativeDriver: true }),
       ]),
     ]).start();
+
+    // Pulse on check icon
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.08, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <LinearGradient colors={['#006E2F', '#00B050', '#4ADE80']} style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={['#004D1F', '#006E2F', '#00A842']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Confetti */}
+      {Array.from({ length: 18 }).map((_, i) => <ConfettiDot key={i} index={i} />)}
 
       <View style={styles.content}>
-        {/* Success Animation */}
-        <Animated.View style={[styles.checkCircle, { transform: [{ scale }] }]}>
-          <Text style={styles.checkEmoji}>✅</Text>
+
+        {/* Animated Check Circle */}
+        <Animated.View style={[styles.checkRingOuter, { transform: [{ scale: scaleAnim }, { scale: pulseAnim }] }]}>
+          <View style={styles.checkRingInner}>
+            <CheckCircle size={54} color={Colors.white} strokeWidth={1.5} fill="rgba(255,255,255,0.1)" />
+          </View>
         </Animated.View>
 
-        <Animated.View style={{ opacity, transform: [{ translateY: slideY }] }}>
-          <Text style={styles.title}>Order Confirmed! 🎉</Text>
-          <Text style={styles.orderNum}>Order #CB-2024-00157</Text>
-          <Text style={styles.eta}>⚡ Estimated delivery: 28 minutes</Text>
+        {/* Content */}
+        <Animated.View style={[styles.textBlock, { opacity: opacityAnim, transform: [{ translateY: slideY }] }]}>
 
-          {/* ETA Card */}
-          <View style={styles.etaCard}>
-            <View style={styles.etaStep}>
-              <View style={[styles.etaDot, styles.etaDotActive]} />
-              <Text style={styles.etaLabel}>Order Confirmed</Text>
-              <Text style={styles.etaTime}>Just now</Text>
-            </View>
-            <View style={styles.etaLine} />
-            <View style={styles.etaStep}>
-              <View style={styles.etaDot} />
-              <Text style={styles.etaLabelPending}>Rider Assigned</Text>
-              <Text style={styles.etaTimePending}>~5 min</Text>
-            </View>
-            <View style={styles.etaLine} />
-            <View style={styles.etaStep}>
-              <View style={styles.etaDot} />
-              <Text style={styles.etaLabelPending}>Out for Delivery</Text>
-              <Text style={styles.etaTimePending}>~15 min</Text>
-            </View>
-            <View style={styles.etaLine} />
-            <View style={styles.etaStep}>
-              <View style={styles.etaDot} />
-              <Text style={styles.etaLabelPending}>Delivered 🏠</Text>
-              <Text style={styles.etaTimePending}>~28 min</Text>
-            </View>
+          <Text style={styles.title}>Order Placed! 🎉</Text>
+          <Text style={styles.orderNum}>Order #CB-2024-00157</Text>
+          <Text style={styles.eta}>⚡ Estimated delivery in 28 minutes</Text>
+
+          {/* Timeline Card */}
+          <View style={styles.timelineCard}>
+            {TIMELINE.map((step, i) => (
+              <View key={i}>
+                <View style={styles.timelineRow}>
+                  <View style={[styles.timelineDot, step.done && styles.timelineDotDone]}>
+                    <step.Icon
+                      size={12}
+                      color={step.done ? Colors.white : 'rgba(255,255,255,0.4)'}
+                      strokeWidth={2.5}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.timelineLabel, !step.done && styles.timelineLabelPending]}>
+                      {step.label}
+                    </Text>
+                  </View>
+                  <Text style={[styles.timelineTime, !step.done && styles.timelineTimePending]}>
+                    {step.sublabel}
+                  </Text>
+                </View>
+                {i < TIMELINE.length - 1 && (
+                  <View style={[styles.timelineLine, step.done && styles.timelineLineDone]} />
+                )}
+              </View>
+            ))}
           </View>
 
+          {/* Actions */}
           <Button
-            label="Track Your Order →"
-            onPress={() => router.replace('/(customer)/orders')}
-            style={{ marginBottom: 12 }}
+            label="Track Your Order"
+            onPress={() => router.replace('/(customer)/orders' as any)}
+            style={styles.trackBtn}
             fullWidth
           />
-          <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/(customer)/' as any)}>
+          <TouchableOpacity
+            style={styles.homeBtn}
+            onPress={() => router.replace('/(customer)/' as any)}
+            activeOpacity={0.8}
+          >
+            <Home size={14} color="rgba(255,255,255,0.8)" strokeWidth={2} />
             <Text style={styles.homeBtnText}>Back to Home</Text>
           </TouchableOpacity>
+
         </Animated.View>
       </View>
     </View>
@@ -83,33 +154,46 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.success },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.lg },
 
-  checkCircle: {
-    width: 130, height: 130, borderRadius: 65,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  // Check animation
+  checkRingOuter: {
+    width: 140, height: 140, borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 28, borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)',
+    marginBottom: 28, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)',
   },
-  checkEmoji: { fontSize: 64 },
-
-  title: { fontFamily: 'BeVietnamPro-ExtraBold', fontSize: 30, color: Colors.white, textAlign: 'center', marginBottom: 8 },
-  orderNum: { ...TextStyles.bodyLgSemiBold, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginBottom: 4 },
-  eta: { ...TextStyles.bodyLgSemiBold, color: Colors.white, textAlign: 'center', marginBottom: 28 },
-
-  etaCard: {
+  checkRingInner: {
+    width: 110, height: 110, borderRadius: 55,
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: Radius.xxl, padding: 20,
-    width: '100%', marginBottom: 28,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  etaStep: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  etaDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: 'rgba(255,255,255,0.3)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
-  etaDotActive: { backgroundColor: Colors.white },
-  etaLabel: { fontFamily: 'BeVietnamPro-Bold', fontSize: 14, color: Colors.white, flex: 1 },
-  etaLabelPending: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 14, color: 'rgba(255,255,255,0.65)', flex: 1 },
-  etaTime: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 12, color: Colors.white },
-  etaTimePending: { fontFamily: 'BeVietnamPro-Regular', fontSize: 12, color: 'rgba(255,255,255,0.55)' },
-  etaLine: { width: 2, height: 16, backgroundColor: 'rgba(255,255,255,0.2)', marginLeft: 6 },
 
-  homeBtn: { alignItems: 'center', paddingVertical: 12 },
+  textBlock: { width: '100%', alignItems: 'center' },
+  title: { fontFamily: 'BeVietnamPro-ExtraBold', fontSize: 30, color: Colors.white, textAlign: 'center', marginBottom: 6 },
+  orderNum: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 14, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginBottom: 6 },
+  eta: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.white, textAlign: 'center', marginBottom: 24 },
+
+  // Timeline
+  timelineCard: {
+    width: '100%', backgroundColor: 'rgba(255,255,255,0.13)',
+    borderRadius: Radius.xxl, padding: 20, marginBottom: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+  },
+  timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  timelineDot: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  timelineDotDone: { backgroundColor: 'rgba(255,255,255,0.3)', borderColor: Colors.white },
+  timelineLabel: { fontFamily: 'BeVietnamPro-Bold', fontSize: 14, color: Colors.white },
+  timelineLabelPending: { fontFamily: 'BeVietnamPro-SemiBold', color: 'rgba(255,255,255,0.55)' },
+  timelineTime: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 12, color: Colors.white },
+  timelineTimePending: { color: 'rgba(255,255,255,0.45)', fontFamily: 'BeVietnamPro-Regular' },
+  timelineLine: { width: 1.5, height: 16, backgroundColor: 'rgba(255,255,255,0.15)', marginLeft: 15, marginVertical: 3 },
+  timelineLineDone: { backgroundColor: 'rgba(255,255,255,0.5)' },
+
+  trackBtn: { marginBottom: 12 },
+  homeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12 },
   homeBtnText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 15, color: 'rgba(255,255,255,0.8)' },
 });
