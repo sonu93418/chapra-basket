@@ -11,6 +11,7 @@ import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { toggleOnline } from '../../src/features/rider/riderSlice';
 import { RIDER_AVAILABLE_ORDERS } from '../../src/data/mockData';
 import { RiderOrder } from '../../src/types';
+import { MapPin, Bell, Clock, Star, TrendingUp, RefreshCw, Map, Store, Package } from '../../src/components/ui/Icon';
 
 const { width } = Dimensions.get('window');
 
@@ -32,7 +33,7 @@ function OrderExpiryTimer({ seconds }: { seconds: number }) {
 
   return (
     <View style={styles.expiryRow}>
-      <Text style={styles.expiryIcon}>🕐</Text>
+      <Clock size={13} color={isUrgent ? Colors.error : Colors.dark.textMuted} strokeWidth={2.5} />
       <Text style={[styles.expiryText, isUrgent && styles.expiryUrgent]}>
         Expires in {mins > 0 ? `${mins}m ` : ''}{secs}s
       </Text>
@@ -43,9 +44,9 @@ function OrderExpiryTimer({ seconds }: { seconds: number }) {
 function RiderOrderCard({ order, onAccept }: { order: RiderOrder; onAccept: () => void }) {
   const isHighPayout = order.hasBonus;
 
-  const storeEmoji = order.storeType === 'restaurant' ? '🍽️'
-    : order.storeType === 'pharmacy' ? '💊'
-    : '🧺';
+  const storeIconComponent = order.storeType === 'restaurant' ? Package
+    : order.storeType === 'pharmacy' ? Package
+    : Store;
 
   return (
     <View style={[styles.orderCard, isHighPayout && styles.orderCardHighlight]}>
@@ -53,7 +54,7 @@ function RiderOrderCard({ order, onAccept }: { order: RiderOrder; onAccept: () =
       <View style={styles.orderTop}>
         <View style={styles.orderLeft}>
           <View style={[styles.storeIcon, { backgroundColor: isHighPayout ? Colors.primary + '30' : 'rgba(255,255,255,0.08)' }]}>
-            <Text style={styles.storeEmoji}>{storeEmoji}</Text>
+            {React.createElement(storeIconComponent, { size: 20, color: isHighPayout ? Colors.primary : Colors.dark.textSecondary, strokeWidth: 2 })}
           </View>
           <View>
             <Text style={styles.storeName}>{order.storeName}</Text>
@@ -131,7 +132,9 @@ export default function RiderDashboard() {
       <SafeAreaView edges={['top']} style={styles.appBar}>
         <View style={styles.appBarInner}>
           <View style={styles.appBarLeft}>
-            <Text style={styles.appBarPin}>📍</Text>
+            <View style={styles.appBarIconWrap}>
+              <MapPin size={14} color={Colors.primary} strokeWidth={2.5} />
+            </View>
             <Text style={styles.appBarTitle}>Rider Dashboard</Text>
           </View>
           <View style={styles.appBarRight}>
@@ -152,7 +155,7 @@ export default function RiderDashboard() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.notifBtn}>
-              <Text style={styles.notifIcon}>🔔</Text>
+              <Bell size={20} color='rgba(255,255,255,0.7)' strokeWidth={1.8} />
             </TouchableOpacity>
           </View>
         </View>
@@ -170,7 +173,7 @@ export default function RiderDashboard() {
           <View style={styles.earningsRow}>
             <Text style={styles.earningsAmount}>₹{profile?.todayEarnings.toLocaleString()}</Text>
             <View style={styles.earningsTrend}>
-              <Text style={styles.trendIcon}>↑</Text>
+              <TrendingUp size={14} color={Colors.successLight} strokeWidth={2.5} />
               <Text style={styles.trendText}>+12%</Text>
             </View>
           </View>
@@ -188,7 +191,7 @@ export default function RiderDashboard() {
               <Text style={styles.statLabel}>Rating</Text>
               <View style={styles.ratingRow}>
                 <Text style={styles.statValue}>{profile?.avgRating}</Text>
-                <Text style={styles.starIcon}>⭐</Text>
+                <Star size={13} color='#FFD700' strokeWidth={2} fill='#FFD700' />
               </View>
             </View>
           </View>
@@ -214,8 +217,9 @@ export default function RiderDashboard() {
         <View style={styles.ordersSection}>
           <View style={styles.ordersSectionHeader}>
             <Text style={styles.ordersTitle}>Available Orders ({filteredOrders.length})</Text>
-            <TouchableOpacity style={styles.refreshBtn}>
-              <Text style={styles.refreshText}>Refresh 🔄</Text>
+            <TouchableOpacity style={styles.refreshBtn} activeOpacity={0.8}>
+              <RefreshCw size={14} color={Colors.primary} strokeWidth={2.5} />
+              <Text style={styles.refreshText}>Refresh</Text>
             </TouchableOpacity>
           </View>
 
@@ -253,7 +257,7 @@ export default function RiderDashboard() {
           <LinearGradient colors={['transparent', 'rgba(12,9,8,0.9)']} style={styles.mapOverlay}>
             <View style={styles.mapFooter}>
               <Text style={styles.mapLabel}>Explore Hotspots Nearby</Text>
-              <Text style={styles.mapIcon}>🗺️</Text>
+              <Map size={20} color={Colors.primary} strokeWidth={1.8} />
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
   appBar: { backgroundColor: 'rgba(12,9,8,0.95)', borderBottomWidth: 1, borderBottomColor: Colors.dark.border },
   appBarInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingVertical: 12 },
   appBarLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  appBarPin: { fontSize: 18, color: Colors.primary },
+  appBarIconWrap: { width: 26, height: 26, borderRadius: 13, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
   appBarTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 20, color: Colors.primary },
   appBarRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 
@@ -282,8 +286,7 @@ const styles = StyleSheet.create({
   onlineText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13 },
   onlineTextOn: { color: Colors.successLight },
   onlineTextOff: { color: Colors.error },
-  notifBtn: { padding: 4 },
-  notifIcon: { fontSize: 22 },
+  notifBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.07)', alignItems: 'center', justifyContent: 'center' },
 
   // Earnings Hero
   earningsCard: {
@@ -323,7 +326,7 @@ const styles = StyleSheet.create({
   ordersSection: { paddingHorizontal: Spacing.lg },
   ordersSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   ordersTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.white },
-  refreshBtn: {},
+  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   refreshText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.primary },
 
   orderCard: {
@@ -348,8 +351,7 @@ const styles = StyleSheet.create({
 
   orderBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
 
-  expiryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  expiryIcon: { fontSize: 14 },
+  expiryRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   expiryText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.dark.textMuted },
   expiryUrgent: { color: Colors.error },
 

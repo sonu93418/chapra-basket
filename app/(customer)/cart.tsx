@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, FlatList, Image,
+  TextInput, Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../../src/theme';
@@ -12,6 +12,8 @@ import { Button } from '../../src/components/ui/Button';
 import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { incrementQuantity, decrementQuantity, clearCart, applyCoupon, removeCoupon } from '../../src/features/cart/cartSlice';
 import { COUPONS } from '../../src/data/mockData';
+import { ArrowLeft, Trash2, Zap, Tag, CheckCircle, X, Shield, RotateCcw, ShoppingCart } from '../../src/components/ui/Icon';
+import { formatCurrencyFull } from '../../src/utils/format';
 
 export default function CartScreen() {
   const dispatch = useAppDispatch();
@@ -41,15 +43,19 @@ export default function CartScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar style="dark" />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}><Text style={styles.backBtn}>←</Text></TouchableOpacity>
-          <Text style={styles.title}>Cart</Text>
-          <View style={{ width: 32 }} />
+          <TouchableOpacity style={styles.backBtnWrap} onPress={() => router.back()} activeOpacity={0.8}>
+            <ArrowLeft size={22} color={Colors.textPrimary} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <Text style={styles.title}>My Cart</Text>
+          <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyCart}>
-          <Text style={styles.emptyEmoji}>🛒</Text>
+          <View style={styles.emptyIconWrap}>
+            <ShoppingCart size={44} color={Colors.textMuted} strokeWidth={1.5} />
+          </View>
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
           <Text style={styles.emptySub}>Add items from our store to get started</Text>
-          <Button label="Shop Now" onPress={() => router.replace('/(customer)/' as any)} style={{ marginTop: 24 }} />
+          <Button label="Start Shopping" onPress={() => router.replace('/(customer)/' as any)} style={{ marginTop: 24 }} />
         </View>
       </SafeAreaView>
     );
@@ -61,10 +67,12 @@ export default function CartScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Text style={styles.backBtn}>←</Text></TouchableOpacity>
-        <Text style={styles.title}>Cart ({items.length})</Text>
-        <TouchableOpacity onPress={() => dispatch(clearCart())}>
-          <Text style={styles.clearBtn}>Clear</Text>
+        <TouchableOpacity style={styles.backBtnWrap} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={22} color={Colors.textPrimary} strokeWidth={2.5} />
+        </TouchableOpacity>
+        <Text style={styles.title}>My Cart ({items.length})</Text>
+        <TouchableOpacity style={styles.clearBtnWrap} onPress={() => dispatch(clearCart())} activeOpacity={0.8}>
+          <Trash2 size={17} color={Colors.error} strokeWidth={2} />
         </TouchableOpacity>
       </View>
 
@@ -72,7 +80,8 @@ export default function CartScreen() {
 
         {/* Delivery ETA */}
         <View style={styles.etaBanner}>
-          <Text style={styles.etaText}>⚡ Delivering in ~30 mins · Chapra</Text>
+          <Zap size={13} color={Colors.successDark} strokeWidth={2.5} fill={Colors.successDark} />
+          <Text style={styles.etaText}>Delivering in ~30 mins · Chapra</Text>
         </View>
 
         {/* Cart Items */}
@@ -100,12 +109,16 @@ export default function CartScreen() {
 
         {/* Coupon */}
         <View style={styles.couponSection}>
-          <Text style={styles.couponTitle}>🎟️ Apply Coupon</Text>
+          <View style={styles.couponHeader}>
+            <Tag size={15} color={Colors.primary} strokeWidth={2} />
+            <Text style={styles.couponTitle}>Apply Coupon</Text>
+          </View>
           {couponCode ? (
             <View style={styles.appliedCoupon}>
-              <Text style={styles.appliedText}>✅ {couponCode} applied — ₹{couponDiscount} off!</Text>
-              <TouchableOpacity onPress={() => dispatch(removeCoupon())}>
-                <Text style={styles.removeText}>Remove</Text>
+              <CheckCircle size={16} color={Colors.success} strokeWidth={2.5} />
+              <Text style={styles.appliedText}>{couponCode} applied — ₹{couponDiscount} off!</Text>
+              <TouchableOpacity onPress={() => dispatch(removeCoupon())} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <X size={16} color={Colors.error} strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
           ) : (
@@ -145,7 +158,7 @@ export default function CartScreen() {
           <Text style={styles.priceTitle}>Price Breakdown</Text>
           <View style={styles.priceRow}>
             <Text style={styles.priceLabel}>Subtotal ({items.length} items)</Text>
-            <Text style={styles.priceValue}>₹{subtotal}</Text>
+            <Text style={styles.priceValue}>{formatCurrencyFull(subtotal)}</Text>
           </View>
           <View style={styles.priceRow}>
             <Text style={styles.priceLabel}>Delivery Fee</Text>
@@ -170,7 +183,7 @@ export default function CartScreen() {
           )}
           <View style={[styles.priceRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{total}</Text>
+            <Text style={styles.totalValue}>{formatCurrencyFull(total)}</Text>
           </View>
           {couponDiscount > 0 && (
             <Text style={styles.savingsText}>🎉 You're saving ₹{couponDiscount} on this order!</Text>
@@ -179,9 +192,20 @@ export default function CartScreen() {
 
         {/* Safety */}
         <View style={styles.safetyRow}>
-          {['🔒 Secure Payment', '⚡ 30 min delivery', '↩️ Easy Returns'].map((s, i) => (
-            <Text key={i} style={styles.safetyItem}>{s}</Text>
-          ))}
+          <View style={styles.safetyItem}>
+            <Shield size={13} color={Colors.success} strokeWidth={2} />
+            <Text style={styles.safetyText}>Secure</Text>
+          </View>
+          <View style={styles.safetyDot} />
+          <View style={styles.safetyItem}>
+            <Zap size={13} color={Colors.primary} strokeWidth={2} fill={Colors.primary} />
+            <Text style={styles.safetyText}>30 min</Text>
+          </View>
+          <View style={styles.safetyDot} />
+          <View style={styles.safetyItem}>
+            <RotateCcw size={13} color={Colors.statusConfirmed} strokeWidth={2} />
+            <Text style={styles.safetyText}>Easy Returns</Text>
+          </View>
         </View>
 
         <View style={{ height: 120 }} />
@@ -190,12 +214,12 @@ export default function CartScreen() {
       {/* Checkout CTA */}
       <View style={[styles.checkoutContainer, Shadows.lg]}>
         <View style={styles.checkoutSummary}>
-          <Text style={styles.checkoutItems}>{items.length} items</Text>
-          <Text style={styles.checkoutTotal}>₹{total}</Text>
+          <Text style={styles.checkoutItems}>{items.length} item{items.length > 1 ? 's' : ''}</Text>
+          <Text style={styles.checkoutTotal}>{formatCurrencyFull(total)}</Text>
         </View>
         <Button
-          label="Proceed to Checkout →"
-          onPress={() => router.push('/checkout')}
+          label="Proceed to Checkout"
+          onPress={() => router.push('/checkout' as any)}
           fullWidth
           size="lg"
           style={{ flex: 1 }}
@@ -207,13 +231,13 @@ export default function CartScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: 14 },
-  backBtn: { fontSize: 22, color: Colors.primary, fontWeight: '700', width: 32 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
+  backBtnWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
+  clearBtnWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.errorContainer, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: 'BeVietnamPro-Bold', fontSize: 20, color: Colors.textPrimary },
-  clearBtn: { ...TextStyles.bodySm, color: Colors.error, fontFamily: 'BeVietnamPro-SemiBold' },
 
-  etaBanner: { marginHorizontal: Spacing.lg, marginBottom: 14, backgroundColor: Colors.successContainer, borderRadius: Radius.lg, paddingHorizontal: 14, paddingVertical: 8 },
-  etaText: { ...TextStyles.bodySm, color: Colors.successDark, fontFamily: 'BeVietnamPro-SemiBold' },
+  etaBanner: { flexDirection: 'row', alignItems: 'center', gap: 7, marginHorizontal: Spacing.lg, marginBottom: 14, backgroundColor: Colors.successContainer, borderRadius: Radius.lg, paddingHorizontal: 14, paddingVertical: 9 },
+  etaText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.successDark },
 
   itemsCard: { marginHorizontal: Spacing.lg, backgroundColor: Colors.white, borderRadius: Radius.xxl, padding: 4, marginBottom: 14, ...Shadows.sm },
   cartItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
@@ -225,7 +249,8 @@ const styles = StyleSheet.create({
   itemDivider: { height: 1, backgroundColor: Colors.borderLight, marginHorizontal: 12 },
 
   couponSection: { marginHorizontal: Spacing.lg, backgroundColor: Colors.white, borderRadius: Radius.xxl, padding: 16, marginBottom: 14, ...Shadows.sm },
-  couponTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.textPrimary, marginBottom: 12 },
+  couponHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+  couponTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.textPrimary },
   couponRow: { flexDirection: 'row', gap: 10 },
   couponInput: {
     flex: 1, borderWidth: 1.5, borderColor: Colors.border, borderRadius: Radius.lg,
@@ -239,9 +264,8 @@ const styles = StyleSheet.create({
   couponChip: { backgroundColor: Colors.primaryContainer, borderRadius: Radius.button, paddingHorizontal: 12, paddingVertical: 6 },
   couponChipCode: { fontFamily: 'BeVietnamPro-Bold', fontSize: 12, color: Colors.primary },
   couponChipDesc: { ...TextStyles.micro, color: Colors.primaryDark, marginTop: 1 },
-  appliedCoupon: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.successContainer, borderRadius: Radius.lg, padding: 12 },
-  appliedText: { ...TextStyles.bodySm, color: Colors.successDark, fontFamily: 'BeVietnamPro-SemiBold', flex: 1 },
-  removeText: { ...TextStyles.bodySm, color: Colors.error, fontFamily: 'BeVietnamPro-SemiBold' },
+  appliedCoupon: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.successContainer, borderRadius: Radius.lg, padding: 12 },
+  appliedText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.successDark, flex: 1 },
 
   priceCard: { marginHorizontal: Spacing.lg, backgroundColor: Colors.white, borderRadius: Radius.xxl, padding: 16, marginBottom: 14, ...Shadows.sm },
   priceTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.textPrimary, marginBottom: 14 },
@@ -257,8 +281,10 @@ const styles = StyleSheet.create({
   totalValue: { fontFamily: 'BeVietnamPro-ExtraBold', fontSize: 20, color: Colors.textPrimary },
   savingsText: { ...TextStyles.bodySm, color: Colors.success, fontFamily: 'BeVietnamPro-SemiBold', marginTop: 8, textAlign: 'center' },
 
-  safetyRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: Spacing.lg, marginBottom: 8 },
-  safetyItem: { ...TextStyles.micro, color: Colors.textMuted },
+  safetyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: Spacing.lg, marginBottom: 8 },
+  safetyItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  safetyText: { fontFamily: 'BeVietnamPro-Regular', fontSize: 12, color: Colors.textMuted },
+  safetyDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: Colors.border },
 
   checkoutContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.white, paddingHorizontal: Spacing.lg, paddingVertical: 16, paddingBottom: 28, flexDirection: 'row', alignItems: 'center', gap: 12 },
   checkoutSummary: { alignItems: 'center' },
@@ -266,7 +292,7 @@ const styles = StyleSheet.create({
   checkoutTotal: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.textPrimary },
 
   emptyCart: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-  emptyEmoji: { fontSize: 72, marginBottom: 20 },
+  emptyIconWrap: { width: 110, height: 110, borderRadius: 55, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   emptyTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 24, color: Colors.textPrimary, marginBottom: 8 },
-  emptySub: { ...TextStyles.bodyLg, color: Colors.textMuted, textAlign: 'center' },
+  emptySub: { fontFamily: 'BeVietnamPro-Regular', fontSize: 15, color: Colors.textMuted, textAlign: 'center' },
 });
