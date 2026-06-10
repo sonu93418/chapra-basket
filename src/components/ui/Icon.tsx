@@ -122,4 +122,9 @@ export {
   Compass,
   Radio,
   ShieldAlert,
+  Calendar,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Briefcase,
+  Edit,
 } from 'lucide-react-native';
