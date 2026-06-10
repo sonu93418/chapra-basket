@@ -50,7 +50,7 @@ export default function ProductDetailScreen() {
 
   const handleShare = async () => {
     await Share.share({
-      message: `Check out ${product.name} on Chapra Basket! Only ₹${product.price}/${product.unit} 🛒`,
+      message: `Check out ${product.name} on Chapra Basket! Only ₹${product.price}/${product.unit}`,
     });
   };
 
@@ -218,12 +218,15 @@ export default function ProductDetailScreen() {
               { Icon: Zap, text: 'Delivered in 30 minutes', color: Colors.warning ?? '#F59E0B' },
               { Icon: RotateCcw, text: 'Easy returns & refunds', color: Colors.primary },
               { Icon: Lock, text: 'Secure & safe payments', color: Colors.successDark },
-            ].map((f, i) => (
-              <View key={i} style={styles.featureItem}>
-                <f.Icon size={18} color={f.color} strokeWidth={2} />
-                <Text style={styles.featureText}>{f.text}</Text>
-              </View>
-            ))}
+            ].map((f, i) => {
+              const IconComponent = f.Icon;
+              return (
+                <View key={i} style={styles.featureItem}>
+                  <IconComponent size={18} color={f.color} strokeWidth={2} />
+                  <Text style={styles.featureText}>{f.text}</Text>
+                </View>
+              );
+            })}
           </View>
         </View>
 

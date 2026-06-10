@@ -19,7 +19,7 @@ export default function ReferralScreen() {
 
   const handleShare = async () => {
     await Share.share({
-      message: `🛒 Join Chapra Basket — Har Zaroorat, Aapke Ghar Tak!\n\nUse my referral code *${REFERRAL_CODE}* and get ₹30 off your first order!\n\nDownload now: chaprabasket.app/join`,
+      message: `Join Chapra Basket — Your Daily Needs, Delivered Instantly!\n\nUse my referral code *${REFERRAL_CODE}* and get ₹30 off your first order!\n\nDownload now: chaprabasket.app/join`,
       title: 'Join Chapra Basket',
     });
   };
@@ -80,20 +80,23 @@ export default function ReferralScreen() {
             { Icon: Smartphone, title: 'Friend joins', sub: 'Your friend downloads and registers on Chapra Basket' },
             { Icon: ShoppingCart, title: 'First order placed', sub: 'Friend places their first order using your code' },
             { Icon: Banknote, title: 'You earn ₹50', sub: 'Wallet credit added instantly!' },
-          ].map((step, i) => (
-            <View key={i} style={styles.stepRow}>
-              <View style={styles.stepNum}>
-                <Text style={styles.stepNumText}>{i + 1}</Text>
+          ].map((step, i) => {
+            const IconComponent = step.Icon;
+            return (
+              <View key={i} style={styles.stepRow}>
+                <View style={styles.stepNum}>
+                  <Text style={styles.stepNumText}>{i + 1}</Text>
+                </View>
+                <View style={styles.stepIcon}>
+                  <IconComponent size={18} color={Colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.stepTitle}>{step.title}</Text>
+                  <Text style={styles.stepSub}>{step.sub}</Text>
+                </View>
               </View>
-              <View style={styles.stepIcon}>
-                <step.Icon size={18} color={Colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.stepTitle}>{step.title}</Text>
-                <Text style={styles.stepSub}>{step.sub}</Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Referred Friends */}

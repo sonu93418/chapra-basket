@@ -78,18 +78,21 @@ export default function SettingsScreen() {
 
         <View style={[styles.card, Shadows.sm]}>
           <Text style={styles.sectionTitle}>About</Text>
-          {LINK_ITEMS.map((item, i) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[styles.linkRow, i < LINK_ITEMS.length - 1 && styles.rowBorder]}
-              onPress={item.onPress}
-              activeOpacity={0.8}
-            >
-              <item.icon size={18} color={Colors.textSecondary} />
-              <Text style={styles.linkLabel}>{item.label}</Text>
-              <Text style={styles.arrow}>›</Text>
-            </TouchableOpacity>
-          ))}
+          {LINK_ITEMS.map((item, i) => {
+            const IconComponent = item.icon;
+            return (
+              <TouchableOpacity
+                key={item.label}
+                style={[styles.linkRow, i < LINK_ITEMS.length - 1 && styles.rowBorder]}
+                onPress={item.onPress}
+                activeOpacity={0.8}
+              >
+                <IconComponent size={18} color={Colors.textSecondary} />
+                <Text style={styles.linkLabel}>{item.label}</Text>
+                <Text style={styles.arrow}>›</Text>
+              </TouchableOpacity>
+            );
+          })}
           <View style={styles.versionRow}>
             <Text style={styles.versionText}>Chapra Basket v{APP_VERSION}</Text>
             <Text style={styles.versionSub}>Made with love in Bihar</Text>

@@ -93,27 +93,30 @@ export default function ProfileScreen() {
           <View key={si} style={styles.menuGroup}>
             <Text style={styles.groupTitle}>{section.title}</Text>
             <View style={[styles.menuCard, Shadows.sm]}>
-              {section.items.map((item, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={[styles.menuItem, i < section.items.length - 1 && styles.menuItemBorder]}
-                  onPress={() => router.push(item.route as any)}
-                  activeOpacity={0.82}
-                >
-                  <View style={[styles.menuIconBg, { backgroundColor: item.color + '18' }]}>
-                    <item.Icon size={18} color={item.color} strokeWidth={2} />
-                  </View>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                  <View style={styles.menuRight}>
-                    {item.badge && (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{item.badge}</Text>
-                      </View>
-                    )}
-                    <ChevronRight size={16} color={Colors.textMuted} strokeWidth={1.8} />
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {section.items.map((item, i) => {
+                const IconComponent = item.Icon;
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={[styles.menuItem, i < section.items.length - 1 && styles.menuItemBorder]}
+                    onPress={() => router.push(item.route as any)}
+                    activeOpacity={0.82}
+                  >
+                    <View style={[styles.menuIconBg, { backgroundColor: item.color + '18' }]}>
+                      <IconComponent size={18} color={item.color} strokeWidth={2} />
+                    </View>
+                    <Text style={styles.menuLabel}>{item.label}</Text>
+                    <View style={styles.menuRight}>
+                      {item.badge && (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>{item.badge}</Text>
+                        </View>
+                      )}
+                      <ChevronRight size={16} color={Colors.textMuted} strokeWidth={1.8} />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         ))}

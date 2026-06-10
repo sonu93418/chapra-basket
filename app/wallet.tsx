@@ -112,13 +112,16 @@ export default function WalletScreen() {
               { Icon: Gift, title: 'Earn Cashback', sub: 'On every order', color: Colors.primary },
               { Icon: Lock, title: '100% Secure', sub: 'Your money is safe', color: Colors.successDark },
               { Icon: RotateCcw, title: 'Easy Refunds', sub: 'Back in minutes', color: Colors.success },
-            ].map((p, i) => (
-              <View key={i} style={styles.perkCard}>
-                <p.Icon size={24} color={p.color} style={{ marginBottom: 4 }} />
-                <Text style={styles.perkTitle}>{p.title}</Text>
-                <Text style={styles.perkSub}>{p.sub}</Text>
-              </View>
-            ))}
+            ].map((p, i) => {
+              const IconComponent = p.Icon;
+              return (
+                <View key={i} style={styles.perkCard}>
+                  <IconComponent size={24} color={p.color} style={{ marginBottom: 4 }} />
+                  <Text style={styles.perkTitle}>{p.title}</Text>
+                  <Text style={styles.perkSub}>{p.sub}</Text>
+                </View>
+              );
+            })}
           </View>
         </View>
 

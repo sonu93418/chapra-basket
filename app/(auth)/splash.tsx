@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles } from '../../src/theme';
+import { ShoppingBag } from '../../src/components/ui/Icon';
 
 const { width, height } = Dimensions.get('window');
 
@@ -56,20 +57,20 @@ export default function SplashScreen() {
       {/* Logo */}
       <Animated.View style={[styles.logoContainer, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
         <View style={styles.logoIcon}>
-          <Text style={styles.logoEmoji}>🧺</Text>
+          <ShoppingBag size={48} color={Colors.white} strokeWidth={2} />
         </View>
         <Text style={styles.logoText}>Chapra Basket</Text>
       </Animated.View>
 
       {/* Tagline */}
       <Animated.View style={[styles.taglineContainer, { opacity: taglineOpacity, transform: [{ translateY: taglineY }] }]}>
-        <Text style={styles.tagline}>हर ज़रूरत, आपके घर तक</Text>
-        <Text style={styles.taglineEn}>Har Zaroorat, Aapke Ghar Tak</Text>
+        <Text style={styles.tagline}>Your Daily Needs, Delivered Instantly</Text>
+        <Text style={styles.taglineEn}>Freshness & Convenience at Your Doorstep</Text>
       </Animated.View>
 
       {/* Bottom branding */}
       <View style={styles.bottomBrand}>
-        <Text style={styles.bottomText}>Chapra, Bihar 🇮🇳</Text>
+        <Text style={styles.bottomText}>Chapra, Bihar</Text>
       </View>
     </View>
   );

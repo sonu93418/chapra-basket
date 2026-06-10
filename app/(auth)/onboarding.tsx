@@ -35,7 +35,10 @@ const SLIDES = [
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-  const dotAnimations = SLIDES.map((_, i) => useRef(new Animated.Value(i === 0 ? 1 : 0)).current);
+  const dotAnim0 = useRef(new Animated.Value(1)).current;
+  const dotAnim1 = useRef(new Animated.Value(0)).current;
+  const dotAnim2 = useRef(new Animated.Value(0)).current;
+  const dotAnimations = [dotAnim0, dotAnim1, dotAnim2];
 
   const updateDots = (index: number) => {
     dotAnimations.forEach((anim, i) => {

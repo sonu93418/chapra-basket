@@ -45,7 +45,7 @@ export default function WishlistScreen() {
         <View style={styles.empty}>
           <Heart size={64} color={Colors.error} fill={Colors.error} style={{ marginBottom: 12 }} />
           <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
-          <Text style={styles.emptySub}>Save items you love by tapping the ❤️ on any product</Text>
+          <Text style={styles.emptySub}>Save items you love by tapping the Heart icon on any product</Text>
           <TouchableOpacity style={styles.shopBtn} onPress={() => router.replace('/(customer)/' as any)} activeOpacity={0.85}>
             <Text style={styles.shopBtnText}>Start Shopping</Text>
           </TouchableOpacity>
