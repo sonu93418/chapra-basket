@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../src/theme';
+import { ArrowLeft, Headphones, Phone, MessageCircle, ChevronUp, ChevronDown, CheckCircle } from '../src/components/ui/Icon';
 
 const FAQ = [
   {
@@ -29,9 +30,9 @@ const FAQ = [
 ];
 
 const CONTACT = [
-  { icon: '📞', label: 'Call Support', sub: '+91 7654 321 098', action: 'Call' },
-  { icon: '💬', label: 'WhatsApp Chat', sub: 'Chat with us instantly', action: 'Chat' },
-  { icon: '✉️', label: 'Email Us', sub: 'support@chaprabasket.com', action: 'Email' },
+  { IconComponent: Phone, label: 'Call Support', sub: '+91 7654 321 098', action: 'Call' },
+  { IconComponent: MessageCircle, label: 'WhatsApp Chat', sub: 'Chat with us instantly', action: 'Chat' },
+  { IconComponent: Headphones, label: 'Email Us', sub: 'support@chaprabasket.com', action: 'Email' },
 ];
 
 export default function HelpScreen() {
@@ -51,8 +52,8 @@ export default function HelpScreen() {
       <StatusBar style="dark" />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.title}>Help & Support</Text>
         <View style={{ width: 40 }} />
@@ -62,7 +63,7 @@ export default function HelpScreen() {
 
         {/* Hero */}
         <View style={styles.hero}>
-          <Text style={styles.heroEmoji}>🤝</Text>
+          <Headphones size={48} color={Colors.primary} style={{ marginBottom: 4 }} />
           <Text style={styles.heroTitle}>How can we help?</Text>
           <Text style={styles.heroSub}>We're here 7 days a week, 8 AM – 10 PM</Text>
         </View>
@@ -77,7 +78,7 @@ export default function HelpScreen() {
               activeOpacity={0.85}
             >
               <View style={styles.contactIcon}>
-                <Text style={styles.contactIconText}>{item.icon}</Text>
+                <item.IconComponent size={22} color={Colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.contactLabel}>{item.label}</Text>
@@ -102,7 +103,11 @@ export default function HelpScreen() {
             >
               <View style={styles.faqHeader}>
                 <Text style={styles.faqQ}>{item.q}</Text>
-                <Text style={styles.faqArrow}>{openFaq === i ? '▲' : '▼'}</Text>
+                {openFaq === i ? (
+                  <ChevronUp size={16} color={Colors.textMuted} />
+                ) : (
+                  <ChevronDown size={16} color={Colors.textMuted} />
+                )}
               </View>
               {openFaq === i && (
                 <Text style={styles.faqA}>{item.a}</Text>
@@ -125,12 +130,13 @@ export default function HelpScreen() {
             textAlignVertical="top"
           />
           {sent ? (
-            <View style={styles.sentBanner}>
-              <Text style={styles.sentText}>✅ Message sent! We'll respond within 2 hours.</Text>
+            <View style={[styles.sentBanner, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }]}>
+              <CheckCircle size={16} color={Colors.successDark} strokeWidth={2.5} />
+              <Text style={styles.sentText}>Message sent! We'll respond within 2 hours.</Text>
             </View>
           ) : (
             <TouchableOpacity style={styles.sendBtn} onPress={handleSend} activeOpacity={0.85}>
-              <Text style={styles.sendBtnText}>📤 Send Message</Text>
+              <Text style={styles.sendBtnText}>Send Message</Text>
             </TouchableOpacity>
           )}
         </View>

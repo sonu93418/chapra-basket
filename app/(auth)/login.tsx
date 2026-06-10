@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
 import { Button } from '../../src/components/ui/Button';
-import { Phone, Shield, Bike, ChevronRight, ShoppingBag } from '../../src/components/ui/Icon';
+import { Phone, Shield, Bike, ChevronRight, ShoppingBag, Check } from '../../src/components/ui/Icon';
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
@@ -46,7 +46,7 @@ export default function LoginScreen() {
             <ShoppingBag size={36} color={Colors.primary} strokeWidth={2} />
           </View>
           <Text style={styles.brand}>Chapra Basket</Text>
-          <Text style={styles.tagline}>Har Zaroorat, Aapke Ghar Tak 🛵</Text>
+          <Text style={styles.tagline}>Your daily needs, delivered at your door</Text>
         </View>
 
         {/* Hero Text */}
@@ -65,7 +65,6 @@ export default function LoginScreen() {
             Shadows.sm,
           ]}>
             <View style={styles.prefix}>
-              <Text style={styles.flag}>🇮🇳</Text>
               <Text style={styles.prefixText}>+91</Text>
             </View>
             <View style={styles.divider} />
@@ -83,7 +82,7 @@ export default function LoginScreen() {
             />
             {isValid && (
               <View style={styles.validMark}>
-                <Text style={{ fontSize: 16 }}>✓</Text>
+                <Check size={16} color={Colors.success} strokeWidth={3} />
               </View>
             )}
           </View>

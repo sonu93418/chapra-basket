@@ -9,6 +9,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../../src/theme';
 import { useAppSelector } from '../../src/hooks/useAppDispatch';
 import { OrderStatus } from '../../src/types';
+import {
+  ArrowLeft, Clock, CheckCircle, Package, Bike, XCircle, RotateCcw,
+  MapPin, Star, Phone, CreditCard, Info
+} from '../../src/components/ui/Icon';
 
 const STATUS_STEPS: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
 
@@ -23,10 +27,21 @@ const STATUS_LABELS: Record<string, string> = {
   returned: 'Returned',
 };
 
-const STATUS_EMOJI: Record<string, string> = {
-  pending: '⏳', confirmed: '✅', preparing: '👨‍🍳',
-  ready_for_pickup: '📦', out_for_delivery: '🛵',
-  delivered: '🎉', cancelled: '❌', returned: '↩️',
+const STATUS_ICONS: Record<string, any> = {
+  pending: Clock, confirmed: CheckCircle, preparing: Package,
+  ready_for_pickup: Package, out_for_delivery: Bike,
+  delivered: CheckCircle, cancelled: XCircle, returned: RotateCcw,
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: Colors.statusPending,
+  confirmed: Colors.statusConfirmed,
+  preparing: Colors.statusPreparing,
+  ready_for_pickup: Colors.statusOutForDelivery,
+  out_for_delivery: Colors.statusOutForDelivery,
+  delivered: Colors.statusDelivered,
+  cancelled: Colors.statusCancelled,
+  returned: Colors.statusCancelled,
 };
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -42,10 +57,11 @@ export default function OrderDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundEmoji}>😕</Text>
+          <Info size={48} color={Colors.textMuted} />
           <Text style={styles.notFoundTitle}>Order not found</Text>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>← Go Back</Text>
+          <TouchableOpacity style={[styles.backBtn, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} onPress={() => router.back()}>
+            <ArrowLeft size={16} color={Colors.white} strokeWidth={2.5} />
+            <Text style={styles.backBtnText}>Go Back</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -64,8 +80,8 @@ export default function OrderDetailScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn2} onPress={() => router.back()}>
-          <Text style={styles.backBtnIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn2} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>#{order.orderNumber}</Text>
@@ -73,9 +89,11 @@ export default function OrderDetailScreen() {
             {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
-        <View style={[styles.statusChip, { backgroundColor: '#E8F5E9' }]}>
-          <Text style={styles.statusEmoji}>{STATUS_EMOJI[order.status]}</Text>
-          <Text style={styles.statusText}>{STATUS_LABELS[order.status]}</Text>
+        <View style={[styles.statusChip, { backgroundColor: order.status === 'delivered' ? '#DCFCE7' : '#FEF3C7', paddingHorizontal: 12, paddingVertical: 6 }]}>
+          {React.createElement(STATUS_ICONS[order.status] || Info, { size: 14, color: STATUS_COLORS[order.status] || Colors.textPrimary })}
+          <Text style={[styles.statusText, { color: STATUS_COLORS[order.status] || Colors.textPrimary, marginLeft: 4 }]}>
+            {STATUS_LABELS[order.status]}
+          </Text>
         </View>
       </View>
 
@@ -93,7 +111,10 @@ export default function OrderDetailScreen() {
               style={styles.trackGradient}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.trackCtaText}>📍 Track Live Order</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MapPin size={20} color={Colors.white} />
+                <Text style={styles.trackCtaText}>Track Live Order</Text>
+              </View>
               {order.estimatedMinutes && (
                 <View style={styles.etaBubble}>
                   <Text style={styles.etaBubbleText}>~{order.estimatedMinutes} min</Text>
@@ -111,6 +132,7 @@ export default function OrderDetailScreen() {
               {STATUS_STEPS.map((step, i) => {
                 const done = i <= currentStep;
                 const active = i === currentStep;
+                const IconComponent = STATUS_ICONS[step] || Info;
                 return (
                   <View key={step} style={styles.stepRow}>
                     <View style={styles.stepLeft}>
@@ -119,9 +141,15 @@ export default function OrderDetailScreen() {
                         done && styles.stepCircleDone,
                         active && styles.stepCircleActive,
                       ]}>
-                        <Text style={styles.stepCircleText}>
-                          {done ? (active ? STATUS_EMOJI[step] : '✓') : '○'}
-                        </Text>
+                        {done ? (
+                          active ? (
+                            <IconComponent size={14} color={Colors.white} />
+                          ) : (
+                            <CheckCircle size={14} color={Colors.success} />
+                          )
+                        ) : (
+                          <IconComponent size={14} color={Colors.textMuted} />
+                        )}
                       </View>
                       {i < STATUS_STEPS.length - 1 && (
                         <View style={[styles.stepLine, done && styles.stepLineDone]} />
@@ -148,18 +176,22 @@ export default function OrderDetailScreen() {
             <Text style={styles.cardTitle}>Your Rider</Text>
             <View style={styles.riderRow}>
               <View style={styles.riderAvatar}>
-                <Text style={styles.riderAvatarText}>🛵</Text>
+                <Bike size={24} color={Colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.riderName}>{order.riderName}</Text>
                 {order.riderRating && (
-                  <Text style={styles.riderRating}>⭐ {order.riderRating} rating</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                    <Text style={styles.riderRating}>{order.riderRating} rating</Text>
+                  </View>
                 )}
               </View>
               {order.riderPhone && (
-                <View style={styles.callBtn}>
-                  <Text style={styles.callBtnText}>📞 Call</Text>
-                </View>
+                <TouchableOpacity style={[styles.callBtn, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} activeOpacity={0.8}>
+                  <Phone size={13} color={Colors.successDark} strokeWidth={2.5} />
+                  <Text style={styles.callBtnText}>Call</Text>
+                </TouchableOpacity>
               )}
             </View>
             {order.deliveryOtp && (
@@ -180,7 +212,7 @@ export default function OrderDetailScreen() {
                 <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
               ) : (
                 <View style={[styles.itemImage, { backgroundColor: Colors.surfaceVariant, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text>📦</Text>
+                  <Package size={24} color={Colors.textMuted} />
                 </View>
               )}
               <View style={{ flex: 1 }}>
@@ -196,7 +228,7 @@ export default function OrderDetailScreen() {
         <View style={[styles.card, Shadows.sm]}>
           <Text style={styles.cardTitle}>Delivery Address</Text>
           <View style={styles.addressRow}>
-            <Text style={styles.addressIcon}>📍</Text>
+            <MapPin size={20} color={Colors.primary} style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.addressLabel}>{order.address.label}</Text>
               <Text style={styles.addressText}>{order.address.fullAddress}</Text>
@@ -228,17 +260,18 @@ export default function OrderDetailScreen() {
             <Text style={styles.totalValue}>₹{order.total}</Text>
           </View>
           <View style={styles.paymentMethodRow}>
-            <Text style={styles.paymentIcon}>💳</Text>
+            <CreditCard size={18} color={Colors.textSecondary} />
             <Text style={styles.paymentMethod}>
-              {PAYMENT_LABELS[order.paymentMethod]} · {order.paymentStatus === 'success' ? '✅ Paid' : order.paymentStatus === 'pending' ? '⏳ Pending' : '❌ Failed'}
+              {PAYMENT_LABELS[order.paymentMethod]} · {order.paymentStatus === 'success' ? 'Paid' : order.paymentStatus === 'pending' ? 'Pending' : 'Failed'}
             </Text>
           </View>
         </View>
 
         {/* Actions */}
         {order.status === 'delivered' && (
-          <TouchableOpacity style={styles.rateBtn}>
-            <Text style={styles.rateBtnText}>⭐ Rate your experience</Text>
+          <TouchableOpacity style={[styles.rateBtn, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }]}>
+            <Star size={18} color={Colors.primary} strokeWidth={2} />
+            <Text style={styles.rateBtnText}>Rate your experience</Text>
           </TouchableOpacity>
         )}
 

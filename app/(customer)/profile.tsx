@@ -128,7 +128,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>Chapra Basket v1.0.0 · Made with ♥ in Bihar 🇮🇳</Text>
+        <Text style={styles.version}>Chapra Basket v1.0.0 · Made in Bihar</Text>
       </ScrollView>
     </SafeAreaView>
   );

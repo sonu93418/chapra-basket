@@ -6,7 +6,9 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
 import { CATEGORIES } from '../../src/data/mockData';
-import { Search, ChevronRight } from '../../src/components/ui/Icon';
+import {
+  Search, ChevronRight, Store, Flame, Leaf, ShoppingBag, Activity, Package, Zap, Briefcase
+} from '../../src/components/ui/Icon';
 
 // ─── Category gradient pairs ─────────────────────────────────────────────────
 const CAT_GRADIENTS: Record<string, [string, string]> = {
@@ -22,10 +24,17 @@ const CAT_GRADIENTS: Record<string, [string, string]> = {
   'personal-care':['#FBE9E7', '#FFAB91'],
 };
 
-const CAT_EMOJIS: Record<string, string> = {
-  grocery: '🛒', fruits: '🍎', vegetables: '🥦', dairy: '🥛',
-  medicines: '💊', snacks: '🍿', beverages: '☕', electronics: '💡',
-  stationery: '📝', 'personal-care': '🧴',
+const CAT_ICONS: Record<string, any> = {
+  grocery: Store,
+  fruits: Flame,
+  vegetables: Leaf,
+  dairy: ShoppingBag,
+  medicines: Activity,
+  snacks: Package,
+  beverages: Zap,
+  electronics: Zap,
+  stationery: Briefcase,
+  'personal-care': ShoppingBag,
 };
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -59,6 +68,7 @@ export default function CategoriesScreen() {
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
           const [from, to] = CAT_GRADIENTS[item.slug] ?? ['#F5F5F5', '#E0E0E0'];
+          const IconComp = CAT_ICONS[item.slug] || Package;
           return (
             <TouchableOpacity
               style={[styles.card, Shadows.sm]}
@@ -70,10 +80,13 @@ export default function CategoriesScreen() {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={styles.iconBg}
               >
-                <Text style={styles.emoji}>{CAT_EMOJIS[item.slug] || '📦'}</Text>
+                {React.createElement(IconComp, {
+                  size: 32,
+                  color: Colors.primaryDark,
+                  strokeWidth: 2,
+                })}
               </LinearGradient>
               <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.nameHindi}>{item.nameHindi}</Text>
               <View style={styles.countRow}>
                 <Text style={styles.count}>{item.productCount} items</Text>
                 <ChevronRight size={12} color={Colors.textMuted} strokeWidth={2} />

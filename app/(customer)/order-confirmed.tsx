@@ -104,7 +104,7 @@ export default function OrderConfirmedScreen() {
         {/* Content */}
         <Animated.View style={[styles.textBlock, { opacity: opacityAnim, transform: [{ translateY: slideY }] }]}>
 
-          <Text style={styles.title}>Order Placed! 🎉</Text>
+          <Text style={styles.title}>Order Placed Successfully</Text>
           <Text style={styles.orderNum}>Order #{order?.orderNumber ?? 'CB-2024-00157'}</Text>
           <Text style={styles.eta}>Express delivery in {order?.estimatedMinutes ?? 28} minutes</Text>
 

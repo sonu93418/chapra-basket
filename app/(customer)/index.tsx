@@ -16,7 +16,7 @@ import { addToCart, incrementQuantity, decrementQuantity } from '../../src/featu
 import { CATEGORIES, FEATURED_PRODUCTS, FLASH_SALE_PRODUCTS, BANNERS, FRESH_PRODUCTS } from '../../src/data/mockData';
 import {
   MapPin, Bell, Search, Mic2, Zap, ChevronRight,
-  Leaf, Star, ShoppingBag, Clock, Tag
+  Leaf, Star, ShoppingBag, Clock, Tag, Store, Flame, Package, Briefcase, Activity
 } from '../../src/components/ui/Icon';
 import { DotBadge } from '../../src/components/ui/Badge';
 import { formatCurrency } from '../../src/utils/format';
@@ -38,10 +38,17 @@ const CATEGORY_SVG_COLORS: Record<string, [string, string]> = {
   'personal-care': ['#FBE9E7', '#FFAB91'],
 };
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  grocery: '🛒', fruits: '🍎', vegetables: '🥦', dairy: '🥛',
-  medicines: '💊', snacks: '🍿', beverages: '☕', electronics: '💡',
-  stationery: '📝', 'personal-care': '🧴',
+const CATEGORY_ICONS: Record<string, any> = {
+  grocery: Store,
+  fruits: Flame,
+  vegetables: Leaf,
+  dairy: ShoppingBag,
+  medicines: Activity,
+  snacks: Package,
+  beverages: Zap,
+  electronics: Zap,
+  stationery: Briefcase,
+  'personal-care': ShoppingBag,
 };
 
 // ─── Flash Sale Timer ─────────────────────────────────────────────────────────
@@ -182,9 +189,15 @@ export default function HomeScreen() {
                       <ChevronRight size={13} color={Colors.white} strokeWidth={2.5} />
                     </View>
                   </View>
-                  <Text style={styles.bannerEmoji}>
-                    {item.categorySlug === 'vegetables' ? '🥬' : item.categorySlug === 'dairy' ? '🥛' : '🪔'}
-                  </Text>
+                  <View style={styles.bannerEmoji}>
+                    {item.categorySlug === 'vegetables' ? (
+                      <Leaf size={56} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+                    ) : item.categorySlug === 'dairy' ? (
+                      <ShoppingBag size={56} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+                    ) : (
+                      <Store size={56} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+                    )}
+                  </View>
                 </LinearGradient>
               </TouchableOpacity>
             )}
@@ -214,10 +227,13 @@ export default function HomeScreen() {
                   activeOpacity={0.85}
                 >
                   <LinearGradient colors={[bgFrom, bgTo]} style={styles.categoryIconBg}>
-                    <Text style={styles.categoryEmoji}>{CATEGORY_EMOJIS[item.slug] || '📦'}</Text>
+                    {React.createElement(CATEGORY_ICONS[item.slug] || Package, {
+                      size: 24,
+                      color: Colors.primaryDark,
+                      strokeWidth: 2,
+                    })}
                   </LinearGradient>
                   <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
-                  <Text style={styles.categoryNameHindi} numberOfLines={1}>{item.nameHindi}</Text>
                 </TouchableOpacity>
               );
             }}
@@ -265,7 +281,7 @@ export default function HomeScreen() {
         {/* ── Fresh Today ── */}
         <View style={styles.section}>
           <SectionHeader
-            title="🌿 Fresh Today"
+            title="Fresh Today"
             onSeeAll={() => router.push('/category/vegetables' as any)}
           />
           <FlatList
@@ -294,7 +310,7 @@ export default function HomeScreen() {
 
         {/* ── Top Picks (2-column grid) ── */}
         <View style={styles.section}>
-          <SectionHeader title="⭐ Top Picks for You" onSeeAll={() => router.push('/(customer)/categories')} />
+          <SectionHeader title="Top Picks for You" onSeeAll={() => router.push('/(customer)/categories')} />
           <View style={styles.productGrid}>
             {FEATURED_PRODUCTS.slice(0, 6).map(item => {
               const qty = getQty(item.id);

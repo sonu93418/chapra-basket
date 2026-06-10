@@ -13,6 +13,7 @@ import { ViewCartBar } from '../../src/components/cart/ViewCartBar';
 import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { addToCart, incrementQuantity, decrementQuantity } from '../../src/features/cart/cartSlice';
 import { PRODUCTS } from '../../src/data/mockData';
+import { ArrowLeft, Share2, Zap, CheckCircle, RotateCcw, Lock, Info } from '../../src/components/ui/Icon';
 
 const { width } = Dimensions.get('window');
 
@@ -28,10 +29,11 @@ export default function ProductDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundEmoji}>😕</Text>
+          <Info size={48} color={Colors.textMuted} />
           <Text style={styles.notFoundTitle}>Product not found</Text>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>← Go Back</Text>
+          <TouchableOpacity style={[styles.backBtn, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} onPress={() => router.back()}>
+            <ArrowLeft size={16} color={Colors.white} strokeWidth={2.5} />
+            <Text style={styles.backBtnText}>Go Back</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -58,12 +60,12 @@ export default function ProductDetailScreen() {
 
       {/* Sticky Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}>
-          <Text style={styles.headerBtnIcon}>←</Text>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{product.name}</Text>
-        <TouchableOpacity style={styles.headerBtn} onPress={handleShare}>
-          <Text style={styles.headerBtnIcon}>↗</Text>
+        <TouchableOpacity style={styles.headerBtn} onPress={handleShare} activeOpacity={0.8}>
+          <Share2 size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -85,7 +87,7 @@ export default function ProductDetailScreen() {
           ) : null}
           {product.isFresh && (
             <View style={styles.freshBadge}>
-              <Text style={styles.freshBadgeText}>🌿 FRESH</Text>
+              <Text style={styles.freshBadgeText}>FRESH</Text>
             </View>
           )}
 
@@ -108,9 +110,6 @@ export default function ProductDetailScreen() {
           <View style={styles.nameRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.productName}>{product.name}</Text>
-              {product.nameHindi && (
-                <Text style={styles.nameHindi}>{product.nameHindi}</Text>
-              )}
               <Text style={styles.unitText}>{product.unit}</Text>
             </View>
           </View>
@@ -156,7 +155,7 @@ export default function ProductDetailScreen() {
             colors={['#E8F5E9', '#F1F8E9']}
             style={styles.deliveryCard}
           >
-            <Text style={styles.deliveryIcon}>⚡</Text>
+            <Zap size={24} color={Colors.successDark} />
             <View>
               <Text style={styles.deliveryTitle}>Express Delivery</Text>
               <Text style={styles.deliverySub}>Delivered in 30 mins · Chapra</Text>
@@ -178,7 +177,7 @@ export default function ProductDetailScreen() {
                   end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.addToCartText}>
-                    {product.stockQuantity > 0 ? '🛒  Add to Cart' : 'Out of Stock'}
+                    {product.stockQuantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -215,13 +214,13 @@ export default function ProductDetailScreen() {
           <Text style={styles.sectionTitle}>Why Chapra Basket?</Text>
           <View style={styles.featureList}>
             {[
-              { icon: '✅', text: 'Quality checked products' },
-              { icon: '⚡', text: 'Delivered in 30 minutes' },
-              { icon: '↩️', text: 'Easy returns & refunds' },
-              { icon: '🔒', text: 'Secure & safe payments' },
+              { Icon: CheckCircle, text: 'Quality checked products', color: Colors.success },
+              { Icon: Zap, text: 'Delivered in 30 minutes', color: Colors.warning ?? '#F59E0B' },
+              { Icon: RotateCcw, text: 'Easy returns & refunds', color: Colors.primary },
+              { Icon: Lock, text: 'Secure & safe payments', color: Colors.successDark },
             ].map((f, i) => (
               <View key={i} style={styles.featureItem}>
-                <Text style={styles.featureIcon}>{f.icon}</Text>
+                <f.Icon size={18} color={f.color} strokeWidth={2} />
                 <Text style={styles.featureText}>{f.text}</Text>
               </View>
             ))}

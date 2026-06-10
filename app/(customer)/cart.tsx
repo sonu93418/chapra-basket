@@ -186,7 +186,7 @@ export default function CartScreen() {
             <Text style={styles.totalValue}>{formatCurrencyFull(total)}</Text>
           </View>
           {couponDiscount > 0 && (
-            <Text style={styles.savingsText}>🎉 You're saving ₹{couponDiscount} on this order!</Text>
+            <Text style={styles.savingsText}>You're saving ₹{couponDiscount} on this order!</Text>
           )}
         </View>
 

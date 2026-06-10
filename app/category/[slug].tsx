@@ -11,6 +11,7 @@ import { ViewCartBar } from '../../src/components/cart/ViewCartBar';
 import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { addToCart, incrementQuantity, decrementQuantity } from '../../src/features/cart/cartSlice';
 import { CATEGORIES, PRODUCTS } from '../../src/data/mockData';
+import { ArrowLeft, Package } from '../../src/components/ui/Icon';
 
 const SORT_OPTIONS = ['Popular', 'Price: Low-High', 'Price: High-Low', 'Discount'];
 const FILTER_OPTIONS = ['All', 'Fresh', 'Discounted', 'In Stock'];
@@ -50,12 +51,11 @@ export default function CategoryScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{category?.name ?? slug}</Text>
-          {category?.nameHindi && <Text style={styles.titleHindi}>{category.nameHindi}</Text>}
         </View>
         <Text style={styles.count}>{products.length} items</Text>
       </View>
@@ -112,7 +112,7 @@ export default function CategoryScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>📭</Text>
+            <Package size={40} color={Colors.textMuted} strokeWidth={1.5} />
             <Text style={styles.emptyTitle}>No products found</Text>
             <Text style={styles.emptySub}>Try changing filters</Text>
           </View>

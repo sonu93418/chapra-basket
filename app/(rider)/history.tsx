@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar';
 import { Colors, TextStyles, Radius, Spacing } from '../../src/theme';
+import { Star } from '../../src/components/ui/Icon';
 
 const HISTORY = [
   { id: 'h1', orderNum: '9926', store: 'Chapra Kitchen', payout: 125, bonus: 20, time: '2:30 PM', date: 'Today', distance: '1.2 km', rating: 5 },
@@ -45,8 +46,12 @@ export default function RiderHistoryScreen() {
             <View style={styles.historyLeft}>
               <Text style={styles.historyStore}>{item.store}</Text>
               <Text style={styles.historyMeta}>#{item.orderNum} · {item.distance} · {item.time}</Text>
-              {'⭐'.repeat(item.rating).padEnd(5, '☆')}
-              <Text style={styles.historyRating}>{'⭐'.repeat(item.rating)}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                <Text style={{ fontFamily: 'BeVietnamPro-SemiBold', fontSize: 12, color: Colors.dark.textMuted }}>
+                  {item.rating}.0
+                </Text>
+              </View>
             </View>
             <View style={styles.historyRight}>
               <Text style={styles.historyPayout}>₹{item.payout}</Text>

@@ -9,7 +9,7 @@ import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
 import { Button } from '../../src/components/ui/Button';
 import { useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { loginSuccess } from '../../src/features/auth/authSlice';
-import { ArrowLeft, Phone, RefreshCw, CheckCircle, AlertCircle } from '../../src/components/ui/Icon';
+import { ArrowLeft, Phone, RefreshCw, CheckCircle, AlertCircle, Info } from '../../src/components/ui/Icon';
 import { formatPhone } from '../../src/utils/format';
 
 const OTP_LENGTH = 6;
@@ -135,7 +135,7 @@ export default function OTPVerifyScreen() {
         </View>
 
         <Text style={styles.title}>
-          {success ? 'Verified! 🎉' : 'OTP Verification'}
+          {success ? 'Verified' : 'OTP Verification'}
         </Text>
         <Text style={styles.subtitle}>
           {success
@@ -201,7 +201,10 @@ export default function OTPVerifyScreen() {
 
         {/* Demo hint */}
         <View style={styles.demoHint}>
-          <Text style={styles.demoText}>🔧 Demo mode: Enter any 6 digits to login</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <Info size={14} color={Colors.warning} strokeWidth={2.5} />
+            <Text style={styles.demoText}>Demo mode: Enter any 6 digits to login</Text>
+          </View>
         </View>
 
         <Button

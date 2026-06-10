@@ -32,7 +32,7 @@ export interface Address {
 export interface Category {
   id: string;
   name: string;
-  nameHindi: string;
+  nameHindi?: string;
   slug: string;
   iconName: string;
   color: string;

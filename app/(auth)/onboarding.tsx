@@ -4,36 +4,31 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles, Radius, Spacing } from '../../src/theme';
+import { Zap, Package, Map, ArrowRight } from '../../src/components/ui/Icon';
 
 const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    emoji: '🏃',
-    title: '30 मिनट में डिलीवरी',
+    Icon: Zap,
     titleEn: 'Delivered in 30 Minutes',
     subtitle: 'Groceries, vegetables, medicines — everything at your doorstep. Super fast!',
     gradient: ['#FF6B00', '#A04100'] as [string, string],
-    bgEmoji: '⚡',
   },
   {
     id: '2',
-    emoji: '🛒',
-    title: '10+ कैटेगरी, एक App',
+    Icon: Package,
     titleEn: '10+ Categories, One App',
     subtitle: 'Grocery, Fruits, Vegetables, Dairy, Medicines, Snacks and much more!',
     gradient: ['#00B050', '#005321'] as [string, string],
-    bgEmoji: '🧺',
   },
   {
     id: '3',
-    emoji: '📍',
-    title: 'हर Order Live Track करें',
+    Icon: Map,
     titleEn: 'Track Every Order Live',
     subtitle: 'See your delivery partner on the map in real time. Know exactly when it arrives.',
     gradient: ['#3B82F6', '#1D4ED8'] as [string, string],
-    bgEmoji: '🗺️',
   },
 ];
 
@@ -75,17 +70,13 @@ export default function OnboardingScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <LinearGradient colors={item.gradient} style={styles.slide}>
-            {/* Background emoji watermark */}
-            <Text style={styles.bgEmoji}>{item.bgEmoji}</Text>
-
-            {/* Main emoji */}
-            <View style={styles.emojiContainer}>
-              <Text style={styles.emoji}>{item.emoji}</Text>
+            {/* Main Icon */}
+            <View style={styles.iconContainer}>
+              <item.Icon size={56} color={Colors.white} strokeWidth={2} />
             </View>
 
             {/* Text */}
             <View style={styles.textContainer}>
-              <Text style={styles.titleHindi}>{item.title}</Text>
               <Text style={styles.titleEn}>{item.titleEn}</Text>
               <Text style={styles.subtitle}>{item.subtitle}</Text>
             </View>
@@ -120,7 +111,7 @@ export default function OnboardingScreen() {
 
           <TouchableOpacity onPress={goNext} style={styles.nextBtn}>
             <Text style={styles.nextText}>
-              {currentIndex === SLIDES.length - 1 ? 'Get Started 🚀' : 'Next →'}
+              {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Next'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -139,13 +130,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
-  bgEmoji: {
-    position: 'absolute',
-    fontSize: 220,
-    opacity: 0.06,
-    top: height * 0.1,
-  },
-  emojiContainer: {
+  iconContainer: {
     width: 140,
     height: 140,
     borderRadius: 70,
@@ -156,11 +141,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.2)',
   },
-  emoji: { fontSize: 72 },
 
   textContainer: { alignItems: 'center' },
-  titleHindi: { fontFamily: 'BeVietnamPro-Bold', fontSize: 28, color: Colors.white, textAlign: 'center', marginBottom: 6 },
-  titleEn: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 16, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginBottom: 16 },
+  titleEn: { fontFamily: 'BeVietnamPro-Bold', fontSize: 28, color: Colors.white, textAlign: 'center', marginBottom: 16 },
   subtitle: { fontFamily: 'BeVietnamPro-Regular', fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', lineHeight: 24 },
 
   controls: {

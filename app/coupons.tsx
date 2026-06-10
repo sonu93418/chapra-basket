@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../src/theme';
 import { COUPONS } from '../src/data/mockData';
+import { ArrowLeft, Gift, Percent, Bike, Tag } from '../src/components/ui/Icon';
 
 export default function CouponsScreen() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -19,8 +20,8 @@ export default function CouponsScreen() {
       <StatusBar style="dark" />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.title}>My Coupons</Text>
         <View style={{ width: 40 }} />
@@ -31,8 +32,9 @@ export default function CouponsScreen() {
         keyExtractor={c => c.id}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>🎁 You have {COUPONS.length} active coupons. Apply them at checkout!</Text>
+          <View style={[styles.infoBox, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
+            <Gift size={18} color={Colors.primary} />
+            <Text style={styles.infoText}>You have {COUPONS.length} active coupons. Apply them at checkout!</Text>
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
@@ -40,9 +42,13 @@ export default function CouponsScreen() {
           <View style={[styles.card, Shadows.sm]}>
             {/* Left scissor strip */}
             <View style={styles.leftStrip}>
-              <Text style={styles.couponIcon}>
-                {item.discountType === 'percent' ? '🎯' : item.code === 'FREEDEL' ? '🛵' : '💰'}
-              </Text>
+              {item.discountType === 'percent' ? (
+                <Percent size={28} color={Colors.primary} />
+              ) : item.code === 'FREEDEL' ? (
+                <Bike size={28} color={Colors.primary} />
+              ) : (
+                <Tag size={28} color={Colors.primary} />
+              )}
             </View>
 
             {/* Dashed divider */}
@@ -60,7 +66,7 @@ export default function CouponsScreen() {
                   style={[styles.copyBtn, copied === item.code && styles.copyBtnDone]}
                   onPress={() => handleCopy(item.code)}
                 >
-                  <Text style={styles.copyBtnText}>{copied === item.code ? '✓ Copied!' : 'Copy'}</Text>
+                  <Text style={styles.copyBtnText}>{copied === item.code ? 'Copied!' : 'Copy'}</Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.desc}>{item.description}</Text>

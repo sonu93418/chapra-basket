@@ -280,7 +280,7 @@ export default function CheckoutScreen() {
             </View>
             {savings > 0 && (
               <LinearGradient colors={[Colors.successContainer, '#D4EDDA']} style={styles.savingsBanner}>
-                <Text style={styles.savingsText}>🎉 You are saving {formatCurrencyFull(savings)} on this order!</Text>
+                <Text style={styles.savingsText}>You are saving {formatCurrencyFull(savings)} on this order!</Text>
               </LinearGradient>
             )}
           </View>

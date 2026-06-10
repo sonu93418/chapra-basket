@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../src/theme';
+import { ArrowLeft, Lock, FileText, Star, RefreshCw, Trash2 } from '../src/components/ui/Icon';
 
 const APP_VERSION = '1.0.0';
 
@@ -35,10 +36,10 @@ export default function SettingsScreen() {
   ];
 
   const LINK_ITEMS = [
-    { icon: '🔒', label: 'Privacy Policy', onPress: () => {} },
-    { icon: '📜', label: 'Terms & Conditions', onPress: () => {} },
-    { icon: '⭐', label: 'Rate the App', onPress: () => {} },
-    { icon: '🔄', label: 'Check for Updates', onPress: () => {} },
+    { icon: Lock, label: 'Privacy Policy', onPress: () => {} },
+    { icon: FileText, label: 'Terms & Conditions', onPress: () => {} },
+    { icon: Star, label: 'Rate the App', onPress: () => {} },
+    { icon: RefreshCw, label: 'Check for Updates', onPress: () => {} },
   ];
 
   return (
@@ -46,8 +47,8 @@ export default function SettingsScreen() {
       <StatusBar style="dark" />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.title}>Settings</Text>
         <View style={{ width: 40 }} />
@@ -84,19 +85,22 @@ export default function SettingsScreen() {
               onPress={item.onPress}
               activeOpacity={0.8}
             >
-              <Text style={styles.linkIcon}>{item.icon}</Text>
+              <item.icon size={18} color={Colors.textSecondary} />
               <Text style={styles.linkLabel}>{item.label}</Text>
               <Text style={styles.arrow}>›</Text>
             </TouchableOpacity>
           ))}
           <View style={styles.versionRow}>
             <Text style={styles.versionText}>Chapra Basket v{APP_VERSION}</Text>
-            <Text style={styles.versionSub}>Made with ❤️ in Bihar</Text>
+            <Text style={styles.versionSub}>Made with love in Bihar</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={[styles.dangerCard, Shadows.sm]}>
-          <Text style={styles.dangerText}>🗑️ Delete Account</Text>
+        <TouchableOpacity style={[styles.dangerCard, Shadows.sm]} activeOpacity={0.85}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <Trash2 size={16} color={Colors.error} strokeWidth={2.5} />
+            <Text style={styles.dangerText}>Delete Account</Text>
+          </View>
           <Text style={styles.dangerSub}>This will permanently remove your account and data</Text>
         </TouchableOpacity>
 

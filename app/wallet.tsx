@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../src/theme';
 import { MOCK_WALLET_TRANSACTIONS } from '../src/data/mockData';
 import { WalletTransaction } from '../src/types';
+import { ArrowLeft, TrendingUp, TrendingDown, CreditCard, Zap, Gift, Lock, RotateCcw } from '../src/components/ui/Icon';
 
 const BALANCE = 120;
 
@@ -39,8 +40,8 @@ export default function WalletScreen() {
         style={styles.header}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       >
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.white} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chapra Wallet</Text>
         <View style={{ width: 40 }} />
@@ -63,16 +64,16 @@ export default function WalletScreen() {
 
           <View style={styles.balanceStats}>
             <View style={styles.balanceStat}>
-              <Text style={styles.balanceStatIcon}>📈</Text>
-              <View>
+              <TrendingUp size={22} color={Colors.white} />
+              <View style={{ marginLeft: 4 }}>
                 <Text style={styles.balanceStatLabel}>Total Credited</Text>
                 <Text style={styles.balanceStatValue}>₹{credits}</Text>
               </View>
             </View>
             <View style={styles.balanceStatDivider} />
             <View style={styles.balanceStat}>
-              <Text style={styles.balanceStatIcon}>📉</Text>
-              <View>
+              <TrendingDown size={22} color={Colors.white} />
+              <View style={{ marginLeft: 4 }}>
                 <Text style={styles.balanceStatLabel}>Total Spent</Text>
                 <Text style={styles.balanceStatValue}>₹{debits}</Text>
               </View>
@@ -93,10 +94,11 @@ export default function WalletScreen() {
           <TouchableOpacity style={styles.addMoneyBtn} activeOpacity={0.85}>
             <LinearGradient
               colors={[Colors.primary, Colors.primaryDark]}
-              style={styles.addMoneyGradient}
+              style={[styles.addMoneyGradient, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.addMoneyText}>💳  Add Money</Text>
+              <CreditCard size={18} color={Colors.white} />
+              <Text style={styles.addMoneyText}>Add Money</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -106,13 +108,13 @@ export default function WalletScreen() {
           <Text style={styles.sectionTitle}>Wallet Perks</Text>
           <View style={styles.perksGrid}>
             {[
-              { icon: '⚡', title: 'Instant Checkout', sub: 'No OTP needed' },
-              { icon: '🎁', title: 'Earn Cashback', sub: 'On every order' },
-              { icon: '🔒', title: '100% Secure', sub: 'Your money is safe' },
-              { icon: '↩️', title: 'Easy Refunds', sub: 'Back in minutes' },
+              { Icon: Zap, title: 'Instant Checkout', sub: 'No OTP needed', color: Colors.warning ?? '#F59E0B' },
+              { Icon: Gift, title: 'Earn Cashback', sub: 'On every order', color: Colors.primary },
+              { Icon: Lock, title: '100% Secure', sub: 'Your money is safe', color: Colors.successDark },
+              { Icon: RotateCcw, title: 'Easy Refunds', sub: 'Back in minutes', color: Colors.success },
             ].map((p, i) => (
               <View key={i} style={styles.perkCard}>
-                <Text style={styles.perkIcon}>{p.icon}</Text>
+                <p.Icon size={24} color={p.color} style={{ marginBottom: 4 }} />
                 <Text style={styles.perkTitle}>{p.title}</Text>
                 <Text style={styles.perkSub}>{p.sub}</Text>
               </View>
@@ -129,9 +131,11 @@ export default function WalletScreen() {
                 styles.txnIcon,
                 { backgroundColor: txn.type === 'credit' ? Colors.successContainer : '#FFF1F0' }
               ]}>
-                <Text style={styles.txnIconText}>
-                  {txn.type === 'credit' ? '📥' : '📤'}
-                </Text>
+                {txn.type === 'credit' ? (
+                  <TrendingUp size={20} color={Colors.success} />
+                ) : (
+                  <TrendingDown size={20} color={Colors.error} />
+                )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.txnDesc}>{txn.description}</Text>

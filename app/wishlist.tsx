@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '../src/hooks/useAppDispatch';
 import { addToCart } from '../src/features/cart/cartSlice';
 import { PRODUCTS } from '../src/data/mockData';
 import { Product } from '../src/types';
+import { ArrowLeft, Heart, ShoppingCart } from '../src/components/ui/Icon';
 
 // Seed some default wishlist items
 const DEFAULT_WISHLIST = ['p8', 'p11', 'p21', 'p27', 'p35'];
@@ -35,18 +36,18 @@ export default function WishlistScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar style="dark" />
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backIcon}>←</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+            <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.title}>Wishlist</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>❤️</Text>
+          <Heart size={64} color={Colors.error} fill={Colors.error} style={{ marginBottom: 12 }} />
           <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
           <Text style={styles.emptySub}>Save items you love by tapping the ❤️ on any product</Text>
-          <TouchableOpacity style={styles.shopBtn} onPress={() => router.replace('/(customer)/' as any)}>
-            <Text style={styles.shopBtnText}>Start Shopping →</Text>
+          <TouchableOpacity style={styles.shopBtn} onPress={() => router.replace('/(customer)/' as any)} activeOpacity={0.85}>
+            <Text style={styles.shopBtnText}>Start Shopping</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -58,8 +59,8 @@ export default function WishlistScreen() {
       <StatusBar style="dark" />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.title}>Wishlist ({wishlistProducts.length})</Text>
         <TouchableOpacity onPress={() => setWishlist([])}>
@@ -71,10 +72,11 @@ export default function WishlistScreen() {
       <TouchableOpacity style={styles.addAllRow} onPress={addAllToCart} activeOpacity={0.85}>
         <LinearGradient
           colors={[Colors.primary, Colors.primaryDark]}
-          style={styles.addAllGradient}
+          style={[styles.addAllGradient, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
         >
-          <Text style={styles.addAllText}>🛒  Add All to Cart</Text>
+          <ShoppingCart size={18} color={Colors.white} />
+          <Text style={styles.addAllText}>Add All to Cart</Text>
           <View style={styles.addAllBadge}>
             <Text style={styles.addAllBadgeText}>{wishlistProducts.length} items</Text>
           </View>
@@ -132,8 +134,9 @@ export default function WishlistScreen() {
                 style={styles.removeBtn}
                 onPress={() => removeFromWishlist(item.id)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.8}
               >
-                <Text style={styles.removeIcon}>❤️</Text>
+                <Heart size={16} color={Colors.error} fill={Colors.error} />
               </TouchableOpacity>
             </TouchableOpacity>
           );

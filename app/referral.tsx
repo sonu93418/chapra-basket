@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../src/theme';
+import { ArrowLeft, Gift, Share2, Smartphone, ShoppingCart, Banknote } from '../src/components/ui/Icon';
 
 const REFERRAL_CODE = 'ANUP2024';
 const REFERRED_FRIENDS = [
@@ -28,8 +29,8 @@ export default function ReferralScreen() {
       <StatusBar style="dark" />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <ArrowLeft size={18} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.title}>Refer & Earn</Text>
         <View style={{ width: 40 }} />
@@ -45,7 +46,7 @@ export default function ReferralScreen() {
         >
           <View style={styles.heroBg1} />
           <View style={styles.heroBg2} />
-          <Text style={styles.heroEmoji}>🎁</Text>
+          <Gift size={48} color={Colors.white} style={{ marginBottom: 12 }} />
           <Text style={styles.heroTitle}>Earn ₹50 Per Referral!</Text>
           <Text style={styles.heroSub}>
             Invite friends to Chapra Basket. You earn ₹50 when they place their first order.
@@ -62,10 +63,11 @@ export default function ReferralScreen() {
           <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.85}>
             <LinearGradient
               colors={[Colors.primary, Colors.primaryDark]}
-              style={styles.shareGradient}
+              style={[styles.shareGradient, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.shareBtnText}>📤  Share & Invite Friends</Text>
+              <Share2 size={18} color={Colors.white} />
+              <Text style={styles.shareBtnText}>Share & Invite Friends</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -74,16 +76,18 @@ export default function ReferralScreen() {
         <View style={[styles.section, Shadows.sm]}>
           <Text style={styles.sectionTitle}>How It Works</Text>
           {[
-            { icon: '📤', title: 'Share your code', sub: 'Share your unique referral link with friends' },
-            { icon: '📲', title: 'Friend joins', sub: 'Your friend downloads and registers on Chapra Basket' },
-            { icon: '🛒', title: 'First order placed', sub: 'Friend places their first order using your code' },
-            { icon: '💰', title: 'You earn ₹50', sub: 'Wallet credit added instantly!' },
+            { Icon: Share2, title: 'Share your code', sub: 'Share your unique referral link with friends' },
+            { Icon: Smartphone, title: 'Friend joins', sub: 'Your friend downloads and registers on Chapra Basket' },
+            { Icon: ShoppingCart, title: 'First order placed', sub: 'Friend places their first order using your code' },
+            { Icon: Banknote, title: 'You earn ₹50', sub: 'Wallet credit added instantly!' },
           ].map((step, i) => (
             <View key={i} style={styles.stepRow}>
               <View style={styles.stepNum}>
                 <Text style={styles.stepNumText}>{i + 1}</Text>
               </View>
-              <View style={styles.stepIcon}><Text style={styles.stepEmoji}>{step.icon}</Text></View>
+              <View style={styles.stepIcon}>
+                <step.Icon size={18} color={Colors.primary} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.stepTitle}>{step.title}</Text>
                 <Text style={styles.stepSub}>{step.sub}</Text>

@@ -6,6 +6,7 @@ import { Colors, TextStyles, Radius, Spacing } from '../../src/theme';
 import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { router } from 'expo-router';
 import { logout } from '../../src/features/auth/authSlice';
+import { Star, CheckCircle, Bike, Building2, ShieldAlert, LogOut } from '../../src/components/ui/Icon';
 
 export default function RiderProfileScreen() {
   const { profile } = useAppSelector(s => s.rider);
@@ -23,14 +24,15 @@ export default function RiderProfileScreen() {
           </View>
           <Text style={styles.name}>Rajan Kumar</Text>
           <Text style={styles.phone}>+91 76543 21098</Text>
-          <View style={styles.ratingChip}>
-            <Text style={styles.ratingText}>⭐ {profile?.avgRating} · {profile?.totalDeliveries} deliveries</Text>
+          <View style={[styles.ratingChip, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+            <Star size={13} color={Colors.primary} fill={Colors.primary} />
+            <Text style={styles.ratingText}>{profile?.avgRating || '4.9'} · {profile?.totalDeliveries || '0'} deliveries</Text>
           </View>
         </View>
 
         {/* KYC Status */}
         <View style={styles.kycCard}>
-          <Text style={styles.kycEmoji}>✅</Text>
+          <CheckCircle size={24} color={Colors.successLight} />
           <View>
             <Text style={styles.kycTitle}>KYC Verified</Text>
             <Text style={styles.kycSub}>Aadhaar & License approved</Text>
@@ -40,25 +42,33 @@ export default function RiderProfileScreen() {
 
         {/* Vehicle */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🏍️ Vehicle Details</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+            <Bike size={18} color={Colors.white} />
+            <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Vehicle Details</Text>
+          </View>
           <View style={styles.infoRow}><Text style={styles.infoLabel}>Type</Text><Text style={styles.infoValue}>Motorcycle</Text></View>
           <View style={styles.infoRow}><Text style={styles.infoLabel}>Number</Text><Text style={styles.infoValue}>BR 01 AB 1234</Text></View>
         </View>
 
         {/* Bank */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🏦 Bank Account</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+            <Building2 size={18} color={Colors.white} />
+            <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Bank Account</Text>
+          </View>
           <View style={styles.infoRow}><Text style={styles.infoLabel}>Account</Text><Text style={styles.infoValue}>****6789</Text></View>
           <View style={styles.infoRow}><Text style={styles.infoLabel}>IFSC</Text><Text style={styles.infoValue}>SBIN0001234</Text></View>
         </View>
 
         {/* SOS */}
-        <TouchableOpacity style={styles.sosBtn}>
-          <Text style={styles.sosText}>🆘 Emergency SOS</Text>
+        <TouchableOpacity style={[styles.sosBtn, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }]}>
+          <ShieldAlert size={18} color={Colors.error} />
+          <Text style={styles.sosText}>Emergency SOS</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => { dispatch(logout()); router.replace('/(auth)/login' as any); }}>
-          <Text style={styles.logoutText}>🚪 Logout</Text>
+        <TouchableOpacity style={[styles.logoutBtn, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }]} onPress={() => { dispatch(logout()); router.replace('/(auth)/login' as any); }}>
+          <LogOut size={16} color={Colors.dark.textMuted} />
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
