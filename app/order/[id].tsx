@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../../src/theme';
-import { MOCK_ORDERS } from '../../src/data/mockData';
+import { useAppSelector } from '../../src/hooks/useAppDispatch';
 import { OrderStatus } from '../../src/types';
 
 const STATUS_STEPS: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
@@ -36,7 +36,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const order = MOCK_ORDERS.find(o => o.id === id);
+  const order = useAppSelector(s => s.orders.items.find(o => o.id === id));
 
   if (!order) {
     return (

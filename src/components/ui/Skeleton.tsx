@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Radius } from '../theme';
+import { Colors, Radius } from '../../theme';
 
 interface SkeletonProps {
   width?: number | string;

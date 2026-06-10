@@ -63,18 +63,18 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon Icon={ShoppingCart} label="Cart" focused={focused} badge={cartCount} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="orders"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon Icon={Package} label="Orders" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon Icon={ShoppingCart} label="Cart" focused={focused} badge={cartCount} />
           ),
         }}
       />
@@ -86,6 +86,9 @@ export default function CustomerLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="search" options={{ href: null }} />
+      <Tabs.Screen name="checkout" options={{ href: null }} />
+      <Tabs.Screen name="order-confirmed" options={{ href: null }} />
     </Tabs>
   );
 }

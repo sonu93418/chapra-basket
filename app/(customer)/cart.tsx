@@ -219,7 +219,7 @@ export default function CartScreen() {
         </View>
         <Button
           label="Proceed to Checkout"
-          onPress={() => router.push('/checkout' as any)}
+          onPress={() => router.push('/(customer)/checkout' as any)}
           fullWidth
           size="lg"
           style={{ flex: 1 }}

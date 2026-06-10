@@ -11,12 +11,70 @@ import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
 import { Button } from '../../src/components/ui/Button';
 import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { clearCart } from '../../src/features/cart/cartSlice';
+import { addOrder } from '../../src/features/orders/ordersSlice';
+import { Address, CartItem, Order, PaymentMethod } from '../../src/types';
 import {
   ArrowLeft, MapPin, Clock, CreditCard, Wallet,
   Smartphone, Banknote, CheckCircle, ChevronRight,
   Zap, Shield, Package, Home,
 } from '../../src/components/ui/Icon';
 import { formatCurrencyFull } from '../../src/utils/format';
+
+const DEFAULT_ADDRESS: Address = {
+  id: 'addr-1',
+  label: 'Home',
+  fullAddress: 'Plot 12, Sadar Bazaar, near SBI Bank, Chapra - 841301',
+  landmark: 'Near SBI Bank',
+  lat: 25.774,
+  lng: 84.7374,
+  city: 'Chapra',
+  state: 'Bihar',
+  pincode: '841301',
+  isDefault: true,
+};
+
+function buildOrderNumber() {
+  return `CB-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
+}
+
+function buildOrder(params: {
+  items: CartItem[];
+  subtotal: number;
+  deliveryFee: number;
+  platformFee: number;
+  couponDiscount: number;
+  total: number;
+  paymentMethod: PaymentMethod;
+  slotLabel: string;
+}): Order {
+  return {
+    id: `ord-${Date.now()}`,
+    orderNumber: buildOrderNumber(),
+    customerId: 'user-1',
+    address: DEFAULT_ADDRESS,
+    items: params.items.map((item, index) => ({
+      id: `oi-${Date.now()}-${index}`,
+      productId: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      unit: item.product.unit,
+      imageUrl: item.product.images[0],
+    })),
+    status: 'pending',
+    subtotal: params.subtotal,
+    deliveryFee: params.deliveryFee,
+    platformFee: params.platformFee,
+    discount: params.couponDiscount,
+    couponDiscount: params.couponDiscount,
+    total: params.total,
+    paymentMethod: params.paymentMethod,
+    paymentStatus: params.paymentMethod === 'cod' ? 'pending' : 'success',
+    estimatedMinutes: params.slotLabel === 'Express Delivery' ? 30 : 90,
+    specialInstructions: params.slotLabel,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 // ─── Payment Methods (SVG icons) ─────────────────────────────────────────────
 const PAYMENT_METHODS = [
@@ -54,7 +112,7 @@ const sh = StyleSheet.create({
 export default function CheckoutScreen() {
   const dispatch = useAppDispatch();
   const { items, couponDiscount } = useAppSelector(s => s.cart);
-  const [selectedPayment, setSelectedPayment] = useState<string>('cod');
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('cod');
   const [selectedSlot, setSelectedSlot] = useState('s1');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -65,11 +123,28 @@ export default function CheckoutScreen() {
   const savings = (deliveryFee === 0 ? 25 : 0) + couponDiscount;
 
   const placeOrder = async () => {
+    if (items.length === 0) {
+      router.replace('/(customer)/cart' as any);
+      return;
+    }
+
     setIsLoading(true);
     await new Promise(r => setTimeout(r, 1600));
+    const selectedSlotInfo = DELIVERY_SLOTS.find(slot => slot.id === selectedSlot) ?? DELIVERY_SLOTS[0];
+    const order = buildOrder({
+      items,
+      subtotal,
+      deliveryFee,
+      platformFee,
+      couponDiscount,
+      total,
+      paymentMethod: selectedPayment,
+      slotLabel: selectedSlotInfo.label,
+    });
+    dispatch(addOrder(order));
     dispatch(clearCart());
     setIsLoading(false);
-    router.replace('/(customer)/order-confirmed' as any);
+    router.replace({ pathname: '/(customer)/order-confirmed', params: { orderId: order.id } } as any);
   };
 
   return (
@@ -158,7 +233,7 @@ export default function CheckoutScreen() {
               <TouchableOpacity
                 key={pm.id}
                 style={[styles.payCard, isActive && styles.payCardActive]}
-                onPress={() => setSelectedPayment(pm.id)}
+                onPress={() => setSelectedPayment(pm.id as PaymentMethod)}
                 activeOpacity={0.85}
               >
                 <View style={[styles.radio, isActive && styles.radioActive]}>

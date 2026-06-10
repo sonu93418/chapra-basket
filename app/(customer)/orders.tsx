@@ -8,8 +8,8 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../../src/theme';
-import { MOCK_ORDERS } from '../../src/data/mockData';
 import { Order, OrderStatus } from '../../src/types';
+import { useAppSelector } from '../../src/hooks/useAppDispatch';
 import {
   Package, Navigation, RotateCcw, Clock, CheckCircle,
   XCircle, Bike, ChevronRight, ShoppingBag
@@ -166,9 +166,10 @@ function EmptyOrders({ tab }: { tab: 'active' | 'past' }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function OrdersScreen() {
   const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
+  const orders = useAppSelector(s => s.orders.items);
 
-  const activeOrders = MOCK_ORDERS.filter(o => ACTIVE_STATUSES.includes(o.status));
-  const pastOrders = MOCK_ORDERS.filter(o => ['delivered', 'cancelled', 'returned'].includes(o.status));
+  const activeOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.status));
+  const pastOrders = orders.filter(o => ['delivered', 'cancelled', 'returned'].includes(o.status));
   const displayedOrders = activeTab === 'active' ? activeOrders : pastOrders;
 
   return (

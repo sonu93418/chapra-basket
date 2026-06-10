@@ -77,6 +77,8 @@ export type OrderStatus =
   | 'confirmed'
   | 'preparing'
   | 'ready_for_pickup'
+  | 'packed'
+  | 'picked_up'
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'

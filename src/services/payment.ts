@@ -21,6 +21,8 @@ export interface PaymentResult {
   error?: string;
 }
 
+const RAZORPAY_PACKAGE = 'react-native-razorpay';
+
 /**
  * Initiate Razorpay payment
  *
@@ -32,7 +34,7 @@ export interface PaymentResult {
 export const initiatePayment = async (options: PaymentOptions): Promise<PaymentResult> => {
   try {
     // Dynamic import to avoid crash if not installed yet
-    const RazorpayCheckout = await import('react-native-razorpay')
+    const RazorpayCheckout = await import(RAZORPAY_PACKAGE)
       .then(m => m.default)
       .catch(() => null);
 

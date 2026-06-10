@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { LucideIcon } from 'lucide-react-native';
-import { Colors } from '../theme';
+import { Colors } from '../../theme';
 
 export type IconSize = 16 | 20 | 24 | 28 | 32 | 40;
 
@@ -41,6 +41,7 @@ export {
   Package,
   User,
   Search,
+  Mic2,
   Bell,
   MapPin,
   Wallet,
@@ -59,6 +60,7 @@ export {
   ChevronRight,
   ChevronDown,
   X,
+  XCircle,
   Check,
   Phone,
   MessageCircle,

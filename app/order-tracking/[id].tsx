@@ -7,13 +7,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Radius, Spacing, Shadows } from '../../../src/theme';
+import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
+import { useAppSelector } from '../../src/hooks/useAppDispatch';
+import { useOrderTracking } from '../../src/hooks/useSocket';
 import {
   ArrowLeft, Phone, MessageCircle, MapPin, Store,
   Bike, CheckCircle, Clock, Package, X,
   ChevronRight, Navigation, User,
-} from '../../../src/components/ui/Icon';
-import { formatETA } from '../../../src/utils/format';
+} from '../../src/components/ui/Icon';
+import { formatETA } from '../../src/utils/format';
 
 const { width } = Dimensions.get('window');
 
@@ -76,6 +78,17 @@ const getTimeline = (status: string): TimelineStep[] => [
   },
 ];
 
+const STATUS_COPY: Record<string, { title: string; subtitle: string }> = {
+  pending: { title: 'Order Placed', subtitle: 'Waiting for store confirmation' },
+  confirmed: { title: 'Confirmed', subtitle: 'Store accepted your order' },
+  preparing: { title: 'Being Prepared', subtitle: 'Store is packing your items' },
+  packed: { title: 'Packed', subtitle: 'Your order is ready for pickup' },
+  picked_up: { title: 'Picked Up', subtitle: 'Rider collected your order' },
+  out_for_delivery: { title: 'Out for Delivery', subtitle: 'Your order is on the way!' },
+  delivered: { title: 'Delivered', subtitle: 'Order delivered successfully' },
+  cancelled: { title: 'Cancelled', subtitle: 'This order was cancelled' },
+};
+
 // ─── ETA Countdown ────────────────────────────────────────────────────────────
 function useEtaTimer(initialMins: number) {
   const [mins, setMins] = useState(initialMins);
@@ -113,17 +126,19 @@ function PulseRing({ color }: { color: string }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function OrderTrackingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const eta = useEtaTimer(12);
-
-  // Mock current status for demo
-  const currentStatus = 'out_for_delivery';
+  const order = useAppSelector(s => s.orders.items.find(item => item.id === id));
+  const tracking = useOrderTracking(id ?? null);
+  const liveLocation = useAppSelector(s => id ? s.orders.riderLocations[id] : undefined);
+  const eta = useEtaTimer(tracking.eta ?? liveLocation?.eta ?? order?.estimatedMinutes ?? 12);
+  const currentStatus = tracking.orderStatus ?? order?.status ?? 'out_for_delivery';
+  const statusCopy = STATUS_COPY[currentStatus] ?? STATUS_COPY.out_for_delivery;
   const timeline = getTimeline(currentStatus);
 
   const rider = {
-    name: 'Rahul Kumar',
-    phone: '+91 98765 43210',
-    rating: 4.8,
-    vehicle: 'UP 52 AB 1234',
+    name: order?.riderName ?? 'Assigning rider',
+    phone: order?.riderPhone ?? '+91 98765 43210',
+    rating: order?.riderRating ?? 4.8,
+    vehicle: 'BR 04 AB 1234',
   };
 
   return (
@@ -137,7 +152,7 @@ export default function OrderTrackingScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Live Tracking</Text>
-          <Text style={styles.headerSub}>Order #{id || 'CB-2024-0042'}</Text>
+          <Text style={styles.headerSub}>Order #{order?.orderNumber ?? id ?? 'CB-2024-0042'}</Text>
         </View>
         <TouchableOpacity style={styles.helpBtn} activeOpacity={0.8}>
           <Phone size={18} color={Colors.primary} strokeWidth={2} />
@@ -209,8 +224,8 @@ export default function OrderTrackingScreen() {
                 <Bike size={22} color={Colors.primary} strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.statusTitle}>Out for Delivery</Text>
-                <Text style={styles.statusSub}>Your order is on the way!</Text>
+                <Text style={styles.statusTitle}>{statusCopy.title}</Text>
+                <Text style={styles.statusSub}>{statusCopy.subtitle}</Text>
               </View>
               <View style={styles.etaBadge}>
                 <Text style={styles.etaBadgeValue}>{eta}</Text>

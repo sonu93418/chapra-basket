@@ -14,8 +14,14 @@ import { Provider } from 'react-redux';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '../src/store';
+import { useSocket } from '../src/hooks/useSocket';
 
 SplashScreen.preventAutoHideAsync();
+
+function RealtimeBridge() {
+  useSocket();
+  return null;
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -39,6 +45,7 @@ export default function RootLayout() {
       {/* @ts-ignore — style prop exists at runtime but was removed from GestureHandlerRootViewProps types */}
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
+          <RealtimeBridge />
           <StatusBar style="auto" />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />

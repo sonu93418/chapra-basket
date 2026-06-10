@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Spacing } from '../../src/theme';
 import { Button } from '../../src/components/ui/Button';
+import { useAppSelector } from '../../src/hooks/useAppDispatch';
 import {
   CheckCircle, Package, Bike, Navigation,
   Home, ShoppingBag, PartyPopper,
@@ -34,18 +35,25 @@ function ConfettiDot({ index }: { index: number }) {
   }, []);
   const x = ((index * 73) % width) - width / 2;
   const size = 6 + (index % 3) * 4;
+  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 500] });
+
   return (
     <Animated.View style={{
-      position: 'absolute', top: anim.interpolate({ inputRange: [0, 1], outputRange: [0, 500] }) as any,
+      position: 'absolute', top: 0,
       left: '50%', marginLeft: x, width: size, height: size,
       borderRadius: size / 2, backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
       opacity: anim.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] }),
+      transform: [{ translateY }],
     }} />
   );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function OrderConfirmedScreen() {
+  const { orderId } = useLocalSearchParams<{ orderId?: string }>();
+  const order = useAppSelector(s =>
+    orderId ? s.orders.items.find(item => item.id === orderId) : s.orders.items[0]
+  );
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const slideY = useRef(new Animated.Value(50)).current;
@@ -97,8 +105,8 @@ export default function OrderConfirmedScreen() {
         <Animated.View style={[styles.textBlock, { opacity: opacityAnim, transform: [{ translateY: slideY }] }]}>
 
           <Text style={styles.title}>Order Placed! 🎉</Text>
-          <Text style={styles.orderNum}>Order #CB-2024-00157</Text>
-          <Text style={styles.eta}>⚡ Estimated delivery in 28 minutes</Text>
+          <Text style={styles.orderNum}>Order #{order?.orderNumber ?? 'CB-2024-00157'}</Text>
+          <Text style={styles.eta}>Express delivery in {order?.estimatedMinutes ?? 28} minutes</Text>
 
           {/* Timeline Card */}
           <View style={styles.timelineCard}>
@@ -131,7 +139,10 @@ export default function OrderConfirmedScreen() {
           {/* Actions */}
           <Button
             label="Track Your Order"
-            onPress={() => router.replace('/(customer)/orders' as any)}
+            onPress={() => order
+              ? router.replace(`/order-tracking/${order.id}` as any)
+              : router.replace('/(customer)/orders' as any)
+            }
             style={styles.trackBtn}
             fullWidth
           />

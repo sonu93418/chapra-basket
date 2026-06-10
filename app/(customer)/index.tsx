@@ -321,7 +321,7 @@ export default function HomeScreen() {
       <ViewCartBar
         itemCount={totalItems}
         totalAmount={totalAmount}
-        onPress={() => router.push('/cart')}
+        onPress={() => router.push('/(customer)/cart' as any)}
       />
     </SafeAreaView>
   );

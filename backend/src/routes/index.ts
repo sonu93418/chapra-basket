@@ -1,0 +1,30 @@
+import { Router } from 'express';
+import { adminRouter } from './admin.routes.js';
+import { addressesRouter } from './addresses.routes.js';
+import { authRouter } from './auth.routes.js';
+import { cartRouter } from './cart.routes.js';
+import { notificationsRouter } from './notifications.routes.js';
+import { ordersRouter } from './orders.routes.js';
+import { paymentsRouter } from './payments.routes.js';
+import { productsRouter } from './products.routes.js';
+import { referralsRouter } from './referrals.routes.js';
+import { reviewsRouter } from './reviews.routes.js';
+import { riderRouter } from './rider.routes.js';
+import { storesRouter } from './stores.routes.js';
+import { walletRouter } from './wallet.routes.js';
+
+export const apiRouter = Router();
+
+apiRouter.use('/auth', authRouter);
+apiRouter.use('/products', productsRouter);
+apiRouter.use('/cart', cartRouter);
+apiRouter.use('/orders', ordersRouter);
+apiRouter.use('/payments', paymentsRouter);
+apiRouter.use('/addresses', addressesRouter);
+apiRouter.use('/stores', storesRouter);
+apiRouter.use('/rider', riderRouter);
+apiRouter.use('/notifications', notificationsRouter);
+apiRouter.use('/wallet', walletRouter);
+apiRouter.use('/referrals', referralsRouter);
+apiRouter.use('/reviews', reviewsRouter);
+apiRouter.use('/admin', adminRouter);
