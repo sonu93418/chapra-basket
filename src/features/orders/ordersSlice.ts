@@ -7,6 +7,9 @@ interface RiderLocation {
   lng: number;
   heading?: number;
   eta?: number;
+  speed?: number;
+  battery?: number;
+  networkStatus?: string;
   updatedAt: string;
 }
 
@@ -82,6 +85,9 @@ const ordersSlice = createSlice({
         lng: number;
         heading?: number;
         eta?: number;
+        speed?: number;
+        battery?: number;
+        networkStatus?: string;
       }>
     ) {
       state.riderLocations[action.payload.orderId] = {
@@ -89,6 +95,9 @@ const ordersSlice = createSlice({
         lng: action.payload.lng,
         heading: action.payload.heading,
         eta: action.payload.eta,
+        speed: action.payload.speed,
+        battery: action.payload.battery,
+        networkStatus: action.payload.networkStatus,
         updatedAt: new Date().toISOString(),
       };
 

@@ -12,6 +12,7 @@ import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { toggleOnline, setActiveOrder, updateEarnings } from '../../src/features/rider/riderSlice';
 import { updateOrderStatus } from '../../src/features/orders/ordersSlice';
 import { emitRiderLocation, getSocket } from '../../src/services/socket';
+import { SensorFusionEngine } from '../../src/utils/sensorFusion';
 import {
   MapPin, Bell, Clock, Star, TrendingUp, RefreshCw,
   Map, Store, Package, Check, Phone, MessageCircle, Navigation,
@@ -83,6 +84,7 @@ export default function RiderDashboard() {
 
   const onlineAnim = useRef(new Animated.Value(isOnline ? 1 : 0)).current;
   const locationWatcherRef = useRef<Location.LocationSubscription | null>(null);
+  const sensorFusionRef = useRef<SensorFusionEngine | null>(null);
 
   // Simulate slowly decaying battery level
   useEffect(() => {
@@ -119,11 +121,29 @@ export default function RiderDashboard() {
       }
       setGpsLoading(false);
 
-      // Stop previous watcher if active
-      if (locationWatcherRef.current) {
-        locationWatcherRef.current.remove();
-        locationWatcherRef.current = null;
-      }
+      // Stop previous watcher and fusion engine if active
+      stopTracking();
+
+      // Start Sensor Fusion Engine
+      sensorFusionRef.current = new SensorFusionEngine(
+        activeDelivery.storeLat,
+        activeDelivery.storeLng,
+        0
+      );
+
+      sensorFusionRef.current.start((fusedState) => {
+        if (!active) return;
+        // Emit location + telemetry details via sockets
+        emitRiderLocation({
+          orderId: activeDelivery.id,
+          lat: fusedState.lat,
+          lng: fusedState.lng,
+          heading: fusedState.heading,
+          speed: fusedState.speed,
+          battery: batteryLevel,
+          networkStatus: fusedState.isDeadReckoning ? 'Weak (Dead Reckoning)' : networkSignal,
+        });
+      });
 
       // Configure initial GPS watcher
       locationWatcherRef.current = await Location.watchPositionAsync(
@@ -134,34 +154,27 @@ export default function RiderDashboard() {
         },
         (loc) => {
           if (!active) return;
-          const { latitude, longitude, heading, speed } = loc.coords;
+          const { latitude, longitude, heading, speed, accuracy } = loc.coords;
 
-          // Adaptive Polling Logic
-          // Calculate current distance to customer
+          // Feed coordinates to sensor fusion engine
+          if (sensorFusionRef.current) {
+            sensorFusionRef.current.updateGPS(
+              latitude,
+              longitude,
+              speed,
+              heading,
+              accuracy
+            );
+          }
+
+          // Adjust watcher settings dynamically on interval constraints if needed
           const distToCustomer = getHaversineDistance(
             latitude,
             longitude,
             activeDelivery.customerLat,
             activeDelivery.customerLng
           );
-
-          // If within 1km (1000m), accelerate update interval to 2 seconds
-          const nearZone = distToCustomer <= 1000;
-          const calculatedSpeed = speed ? speed * 3.6 : 0; // m/s to km/h
-
-          // Emit location + telemetry details via sockets
-          emitRiderLocation({
-            orderId: activeDelivery.id,
-            lat: latitude,
-            lng: longitude,
-            heading: heading || 0,
-            speed: Number(calculatedSpeed.toFixed(1)),
-            battery: batteryLevel,
-            networkStatus: networkSignal,
-          });
-
-          // Adjust watcher settings dynamically on interval constraints if needed
-          console.log(`[GPS] Tracked location: ${latitude}, ${longitude} | Speed: ${calculatedSpeed} km/h | Near customer: ${nearZone}`);
+          console.log(`[GPS] Tracked location: ${latitude}, ${longitude} | Speed: ${speed ? speed * 3.6 : 0} km/h | Near customer: ${distToCustomer <= 1000}`);
         }
       );
     }
@@ -178,6 +191,10 @@ export default function RiderDashboard() {
     if (locationWatcherRef.current) {
       locationWatcherRef.current.remove();
       locationWatcherRef.current = null;
+    }
+    if (sensorFusionRef.current) {
+      sensorFusionRef.current.stop();
+      sensorFusionRef.current = null;
     }
   };
 

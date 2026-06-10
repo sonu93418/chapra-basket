@@ -159,7 +159,16 @@ export const subscribeToOrderEvents = (
 
 export const subscribeToRiderLocation = (
   orderId: string,
-  onLocation: (data: { orderId?: string; lat: number; lng: number; heading?: number; eta?: number }) => void
+  onLocation: (data: {
+    orderId?: string;
+    lat: number;
+    lng: number;
+    heading?: number;
+    eta?: number;
+    speed?: number;
+    battery?: number;
+    networkStatus?: string;
+  }) => void
 ): (() => void) => {
   if (!socket) return () => {};
 

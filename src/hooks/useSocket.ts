@@ -74,6 +74,9 @@ export interface RiderLocation {
   lng: number;
   heading?: number;
   eta?: number;
+  speed?: number;
+  battery?: number;
+  networkStatus?: string;
 }
 
 export const useOrderTracking = (orderId: string | null) => {
@@ -95,7 +98,15 @@ export const useOrderTracking = (orderId: string | null) => {
     });
 
     const unsubLocation = subscribeToRiderLocation(orderId, (data) => {
-      const location = { lat: data.lat, lng: data.lng, heading: data.heading, eta: data.eta };
+      const location = {
+        lat: data.lat,
+        lng: data.lng,
+        heading: data.heading,
+        eta: data.eta,
+        speed: (data as any).speed,
+        battery: (data as any).battery,
+        networkStatus: (data as any).networkStatus,
+      };
       setRiderLocation(location);
       dispatch(updateRiderLocation({ orderId: data.orderId ?? orderId, ...location }));
     });
