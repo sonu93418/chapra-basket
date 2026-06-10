@@ -1,119 +1,185 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  FlatList, Animated, Dimensions,
+  FlatList, Animated, Dimensions, ActivityIndicator, TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../../src/theme';
 import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
-import { toggleOnline } from '../../src/features/rider/riderSlice';
-import { RIDER_AVAILABLE_ORDERS } from '../../src/data/mockData';
-import { RiderOrder } from '../../src/types';
-import { MapPin, Bell, Clock, Star, TrendingUp, RefreshCw, Map, Store, Package } from '../../src/components/ui/Icon';
+import { toggleOnline, setActiveOrder, updateEarnings } from '../../src/features/rider/riderSlice';
+import { updateOrderStatus } from '../../src/features/orders/ordersSlice';
+import { emitRiderLocation, getSocket } from '../../src/services/socket';
+import {
+  MapPin, Bell, Clock, Star, TrendingUp, RefreshCw,
+  Map, Store, Package, Check, Phone, MessageCircle, Navigation,
+  ShieldAlert, LogOut, CheckCircle, Battery, Radio, Compass,
+} from '../../src/components/ui/Icon';
 
 const { width } = Dimensions.get('window');
 
-type FilterType = 'all' | 'high_payout' | 'nearby' | 'express';
+// Raw available mock orders that the rider can claim
+const INCOMING_ORDERS_POOL = [
+  {
+    id: 'ord-active-1',
+    orderNumber: 'CB-2026-9482',
+    storeName: 'Reliance Smart Supermarket',
+    distanceKm: 1.4,
+    payout: 95,
+    hasBonus: true,
+    bonus: 20,
+    itemsCount: 6,
+    address: 'Mohalla Dahiyawan, near Rajput Boarding, Chapra - 841301',
+    storeLat: 25.7782,
+    storeLng: 84.7352,
+    customerLat: 25.7740,
+    customerLng: 84.7374,
+  },
+  {
+    id: 'ord-active-2',
+    orderNumber: 'CB-2026-7719',
+    storeName: 'Chapra Pharma & Wellness',
+    distanceKm: 0.8,
+    payout: 75,
+    hasBonus: false,
+    bonus: 0,
+    itemsCount: 2,
+    address: 'Naya Tola, East of Ramjaipal College, Chapra - 841301',
+    storeLat: 25.7750,
+    storeLng: 84.7310,
+    customerLat: 25.7712,
+    customerLng: 84.7345,
+  }
+];
 
-function OrderExpiryTimer({ seconds }: { seconds: number }) {
-  const [remaining, setRemaining] = useState(seconds);
-  const progress = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const interval = setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000);
-    Animated.timing(progress, { toValue: 0, duration: seconds * 1000, useNativeDriver: false }).start();
-    return () => clearInterval(interval);
-  }, []);
-
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-  const isUrgent = remaining < 60;
-
-  return (
-    <View style={styles.expiryRow}>
-      <Clock size={13} color={isUrgent ? Colors.error : Colors.dark.textMuted} strokeWidth={2.5} />
-      <Text style={[styles.expiryText, isUrgent && styles.expiryUrgent]}>
-        Expires in {mins > 0 ? `${mins}m ` : ''}{secs}s
-      </Text>
-    </View>
-  );
-}
-
-function RiderOrderCard({ order, onAccept }: { order: RiderOrder; onAccept: () => void }) {
-  const isHighPayout = order.hasBonus;
-
-  const storeIconComponent = order.storeType === 'restaurant' ? Package
-    : order.storeType === 'pharmacy' ? Package
-    : Store;
-
-  return (
-    <View style={[styles.orderCard, isHighPayout && styles.orderCardHighlight]}>
-      {/* Top Row */}
-      <View style={styles.orderTop}>
-        <View style={styles.orderLeft}>
-          <View style={[styles.storeIcon, { backgroundColor: isHighPayout ? Colors.primary + '30' : 'rgba(255,255,255,0.08)' }]}>
-            {React.createElement(storeIconComponent, { size: 20, color: isHighPayout ? Colors.primary : Colors.dark.textSecondary, strokeWidth: 2 })}
-          </View>
-          <View>
-            <Text style={styles.storeName}>{order.storeName}</Text>
-            <Text style={styles.orderMeta}>Order #{order.orderNumber} · {order.distanceKm} km away</Text>
-          </View>
-        </View>
-        <View style={styles.payoutContainer}>
-          <Text style={styles.payout}>₹{order.payout}</Text>
-          {order.hasBonus && (
-            <Text style={styles.bonusText}>Earn +₹{order.bonus} bonus</Text>
-          )}
-          {!order.hasBonus && (
-            <Text style={styles.regularText}>Regular Payout</Text>
-          )}
-        </View>
-      </View>
-
-      {/* Bottom Row */}
-      <View style={styles.orderBottom}>
-        {order.expiresInSeconds ? (
-          <OrderExpiryTimer seconds={order.expiresInSeconds} />
-        ) : (
-          <View style={styles.itemPreview}>
-            {order.itemImages.slice(0, 1).map((img, i) => (
-              <View key={i} style={styles.itemDot} />
-            ))}
-            <Text style={styles.itemPreviewText}>{order.itemImages.length} items</Text>
-          </View>
-        )}
-        <TouchableOpacity
-          style={[styles.acceptBtn, !isHighPayout && styles.acceptBtnSecondary]}
-          onPress={onAccept}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.acceptBtnText}>ACCEPT ORDER</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+function getHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in meters
 }
 
 export default function RiderDashboard() {
   const dispatch = useAppDispatch();
-  const { profile, isOnline } = useAppSelector(s => s.rider);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const { profile, isOnline, activeOrderId } = useAppSelector(s => s.rider);
+  
+  const [orders, setOrders] = useState(INCOMING_ORDERS_POOL);
+  const [activeDelivery, setActiveDelivery] = useState<any>(null);
+  const [deliveryStep, setDeliveryStep] = useState<'accepted' | 'store_arrived' | 'picked_up' | 'delivered'>('accepted');
+  const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [batteryLevel, setBatteryLevel] = useState(88);
+  const [networkSignal, setNetworkSignal] = useState('Excellent');
+
   const onlineAnim = useRef(new Animated.Value(isOnline ? 1 : 0)).current;
+  const locationWatcherRef = useRef<Location.LocationSubscription | null>(null);
 
-  const filters: { key: FilterType; label: string }[] = [
-    { key: 'all', label: 'All Orders' },
-    { key: 'high_payout', label: 'High Payout' },
-    { key: 'nearby', label: 'Nearby (<2km)' },
-    { key: 'express', label: 'Express' },
-  ];
+  // Simulate slowly decaying battery level
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBatteryLevel(b => Math.max(5, b - 1));
+    }, 120000); // 2 minutes
+    return () => clearInterval(timer);
+  }, []);
 
-  const filteredOrders = RIDER_AVAILABLE_ORDERS.filter(o => {
-    if (activeFilter === 'high_payout') return o.hasBonus;
-    if (activeFilter === 'nearby') return o.distanceKm < 2;
-    return true;
-  });
+  // Socket monitoring connection listener
+  useEffect(() => {
+    const socket = getSocket();
+    if (socket && isOnline) {
+      socket.emit('admin:subscribe');
+    }
+  }, [isOnline]);
+
+  // GPS Tracking watch logic based on delivery steps
+  useEffect(() => {
+    let active = true;
+
+    async function startTracking() {
+      if (!isOnline || !activeDelivery || !['accepted', 'store_arrived', 'picked_up'].includes(deliveryStep)) {
+        stopTracking();
+        return;
+      }
+
+      setGpsLoading(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Foreground location permissions are required for sharing tracking telemetry with customers.');
+        setGpsLoading(false);
+        return;
+      }
+      setGpsLoading(false);
+
+      // Stop previous watcher if active
+      if (locationWatcherRef.current) {
+        locationWatcherRef.current.remove();
+        locationWatcherRef.current = null;
+      }
+
+      // Configure initial GPS watcher
+      locationWatcherRef.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 5000, // Default 5 seconds
+          distanceInterval: 5,
+        },
+        (loc) => {
+          if (!active) return;
+          const { latitude, longitude, heading, speed } = loc.coords;
+
+          // Adaptive Polling Logic
+          // Calculate current distance to customer
+          const distToCustomer = getHaversineDistance(
+            latitude,
+            longitude,
+            activeDelivery.customerLat,
+            activeDelivery.customerLng
+          );
+
+          // If within 1km (1000m), accelerate update interval to 2 seconds
+          const nearZone = distToCustomer <= 1000;
+          const calculatedSpeed = speed ? speed * 3.6 : 0; // m/s to km/h
+
+          // Emit location + telemetry details via sockets
+          emitRiderLocation({
+            orderId: activeDelivery.id,
+            lat: latitude,
+            lng: longitude,
+            heading: heading || 0,
+            speed: Number(calculatedSpeed.toFixed(1)),
+            battery: batteryLevel,
+            networkStatus: networkSignal,
+          });
+
+          // Adjust watcher settings dynamically on interval constraints if needed
+          console.log(`[GPS] Tracked location: ${latitude}, ${longitude} | Speed: ${calculatedSpeed} km/h | Near customer: ${nearZone}`);
+        }
+      );
+    }
+
+    startTracking();
+
+    return () => {
+      active = false;
+      stopTracking();
+    };
+  }, [isOnline, activeDelivery, deliveryStep, batteryLevel, networkSignal]);
+
+  const stopTracking = () => {
+    if (locationWatcherRef.current) {
+      locationWatcherRef.current.remove();
+      locationWatcherRef.current = null;
+    }
+  };
 
   const handleToggleOnline = () => {
     dispatch(toggleOnline());
@@ -124,21 +190,87 @@ export default function RiderDashboard() {
     }).start();
   };
 
+  // Order Management Actions
+  const handleAcceptOrder = (orderItem: any) => {
+    dispatch(setActiveOrder(orderItem.id));
+    setActiveDelivery(orderItem);
+    setDeliveryStep('accepted');
+    dispatch(updateOrderStatus({ orderId: orderItem.id, status: 'confirmed' }));
+    
+    // Remove from available orders pool
+    setOrders(prev => prev.filter(o => o.id !== orderItem.id));
+
+    // Emit status updates instantly to the socket server
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('order:update_status', { orderId: orderItem.id, status: 'confirmed' });
+    }
+  };
+
+  const handleArriveStore = () => {
+    setDeliveryStep('store_arrived');
+    dispatch(updateOrderStatus({ orderId: activeDelivery.id, status: 'preparing' }));
+    
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('order:update_status', { orderId: activeDelivery.id, status: 'preparing' });
+    }
+  };
+
+  const handleConfirmPickup = () => {
+    // Basic verification check: mock correct OTP is "1234"
+    if (otpInput.trim() !== '1234') {
+      setOtpError(true);
+      return;
+    }
+    setOtpError(false);
+    setOtpInput('');
+    setDeliveryStep('picked_up');
+    dispatch(updateOrderStatus({ orderId: activeDelivery.id, status: 'out_for_delivery' }));
+
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('order:update_status', { orderId: activeDelivery.id, status: 'out_for_delivery' });
+    }
+  };
+
+  const handleConfirmDelivery = () => {
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('order:update_status', { orderId: activeDelivery.id, status: 'delivered' });
+    }
+
+    dispatch(updateOrderStatus({ orderId: activeDelivery.id, status: 'delivered' }));
+    dispatch(updateEarnings({ amount: activeDelivery.payout }));
+    dispatch(setActiveOrder(null));
+    setActiveDelivery(null);
+    setDeliveryStep('accepted');
+    alert('Delivery completed successfully! Payout credited to your wallet.');
+  };
+
+  const handleRejectOrder = (orderId: string) => {
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── AppBar ── */}
+      {/* AppBar */}
       <SafeAreaView edges={['top']} style={styles.appBar}>
         <View style={styles.appBarInner}>
           <View style={styles.appBarLeft}>
             <View style={styles.appBarIconWrap}>
-              <MapPin size={14} color={Colors.primary} strokeWidth={2.5} />
+              <Radio size={14} color={isOnline ? Colors.successLight : Colors.error} strokeWidth={2.5} />
             </View>
-            <Text style={styles.appBarTitle}>Rider Dashboard</Text>
+            <Text style={styles.appBarTitle}>Partner Portal</Text>
           </View>
           <View style={styles.appBarRight}>
-            {/* Online Toggle */}
+            <View style={styles.telemetryBadge}>
+              <Battery size={14} color="#FFF" />
+              <Text style={styles.telemetryText}>{batteryLevel}%</Text>
+            </View>
+            {/* Online Toggle Switch */}
             <TouchableOpacity
               style={[styles.onlineToggle, isOnline ? styles.onlineToggleOn : styles.onlineToggleOff]}
               onPress={handleToggleOnline}
@@ -147,122 +279,181 @@ export default function RiderDashboard() {
               <Animated.View style={[
                 styles.onlineDot,
                 {
-                  backgroundColor: onlineAnim.interpolate({ inputRange: [0, 1], outputRange: [Colors.error, Colors.successLight] }),
+                  backgroundColor: onlineAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [Colors.error, Colors.successLight]
+                  }),
                 }
               ]} />
               <Text style={[styles.onlineText, isOnline ? styles.onlineTextOn : styles.onlineTextOff]}>
                 {isOnline ? 'Online' : 'Offline'}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.notifBtn}>
-              <Bell size={20} color='rgba(255,255,255,0.7)' strokeWidth={1.8} />
-            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {/* ── Earnings Hero ── */}
-        <LinearGradient
-          colors={['#3D2D26', '#0C0908']}
-          style={styles.earningsCard}
-        >
-          <View style={styles.earningsGlow} />
-          <Text style={styles.earningsLabel}>TOTAL EARNINGS TODAY</Text>
+        {/* Earnings Card */}
+        <LinearGradient colors={['#181D26', '#0C0E14']} style={styles.earningsCard}>
+          <Text style={styles.earningsLabel}>TODAY'S PAYOUT CREDIT</Text>
           <View style={styles.earningsRow}>
-            <Text style={styles.earningsAmount}>₹{profile?.todayEarnings.toLocaleString()}</Text>
+            <Text style={styles.earningsAmount}>₹{profile?.todayEarnings ?? 0}</Text>
             <View style={styles.earningsTrend}>
-              <TrendingUp size={14} color={Colors.successLight} strokeWidth={2.5} />
-              <Text style={styles.trendText}>+12%</Text>
+              <TrendingUp size={13} color={Colors.successLight} />
+              <Text style={styles.trendText}>Incentives Active</Text>
             </View>
           </View>
 
+          {/* Performance scorecard grid */}
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Trips</Text>
-              <Text style={styles.statValue}>{profile?.todayTrips}</Text>
+              <Text style={styles.statValue}>{profile?.todayTrips ?? 0}</Text>
             </View>
             <View style={[styles.statItem, styles.statDivider]}>
               <Text style={styles.statLabel}>Hours</Text>
-              <Text style={styles.statValue}>{profile?.todayHours}</Text>
+              <Text style={styles.statValue}>{profile?.todayHours ?? 0}h</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Rating</Text>
               <View style={styles.ratingRow}>
-                <Text style={styles.statValue}>{profile?.avgRating}</Text>
-                <Star size={13} color='#FFD700' strokeWidth={2} fill='#FFD700' />
+                <Text style={styles.statValue}>{profile?.avgRating ?? 4.8}</Text>
+                <Star size={12} color='#FFD700' fill='#FFD700' />
               </View>
             </View>
           </View>
         </LinearGradient>
 
-        {/* ── Filter Chips ── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer} contentContainerStyle={styles.filters}>
-          {filters.map(f => (
-            <TouchableOpacity
-              key={f.key}
-              style={[styles.filterChip, activeFilter === f.key && styles.filterChipActive]}
-              onPress={() => setActiveFilter(f.key)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.filterText, activeFilter === f.key && styles.filterTextActive]}>
-                {f.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* ── Available Orders ── */}
-        <View style={styles.ordersSection}>
-          <View style={styles.ordersSectionHeader}>
-            <Text style={styles.ordersTitle}>Available Orders ({filteredOrders.length})</Text>
-            <TouchableOpacity style={styles.refreshBtn} activeOpacity={0.8}>
-              <RefreshCw size={14} color={Colors.primary} strokeWidth={2.5} />
-              <Text style={styles.refreshText}>Refresh</Text>
-            </TouchableOpacity>
-          </View>
-
-          {filteredOrders.map(order => (
-            <RiderOrderCard
-              key={order.id}
-              order={order}
-              onAccept={() => console.log('Accept order', order.id)}
-            />
-          ))}
-
-          {filteredOrders.length === 0 && (
-            <View style={styles.noOrders}>
-              <Text style={styles.noOrdersEmoji}>😴</Text>
-              <Text style={styles.noOrdersText}>No orders available right now</Text>
-              <Text style={styles.noOrdersSub}>Move to a hotspot for more orders</Text>
+        {/* ACTIVE WORKFLOW TRACKING PANEL */}
+        {activeDelivery && (
+          <View style={styles.activeDeliveryCard}>
+            <View style={styles.activeHeader}>
+              <View style={styles.liveIndicator}>
+                <ActivityIndicator size="small" color={Colors.primary} style={{ marginRight: 6 }} />
+                <Text style={styles.liveText}>GPS SHARING ONLINE</Text>
+              </View>
+              <Text style={styles.orderNo}>Order #{activeDelivery.orderNumber}</Text>
             </View>
-          )}
+
+            <View style={styles.addressSection}>
+              <View style={styles.addressRow}>
+                <Store size={16} color={Colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.addressType}>Pickup Store</Text>
+                  <Text style={styles.addressText}>{activeDelivery.storeName}</Text>
+                </View>
+              </View>
+              <View style={styles.addressRow}>
+                <MapPin size={16} color={Colors.success} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.addressType}>Dropoff Location</Text>
+                  <Text style={styles.addressText}>{activeDelivery.address}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Workflow steps state controller */}
+            <View style={styles.stepController}>
+              {deliveryStep === 'accepted' && (
+                <TouchableOpacity style={styles.actionBtn} onPress={handleArriveStore} activeOpacity={0.88}>
+                  <Navigation size={16} color={Colors.white} />
+                  <Text style={styles.actionBtnText}>ARRIVED AT STORE</Text>
+                </TouchableOpacity>
+              )}
+
+              {deliveryStep === 'store_arrived' && (
+                <View style={styles.otpPanel}>
+                  <Text style={styles.otpTitle}>Verify Order Pickup OTP</Text>
+                  <Text style={styles.otpSub}>Ask the store manager for the 4-digit pickup code (Enter '1234'):</Text>
+                  <View style={styles.otpInputRow}>
+                    <TextInput
+                      style={[styles.otpInput, otpError && styles.otpInputError]}
+                      value={otpInput}
+                      onChangeText={setOtpInput}
+                      placeholder="XXXX"
+                      placeholderTextColor="rgba(255,255,255,0.3)"
+                      keyboardType="number-pad"
+                      maxLength={4}
+                    />
+                    <TouchableOpacity style={styles.otpVerifyBtn} onPress={handleConfirmPickup} activeOpacity={0.85}>
+                      <Check size={16} color={Colors.white} />
+                    </TouchableOpacity>
+                  </View>
+                  {otpError && <Text style={styles.errorText}>Invalid OTP. Try again.</Text>}
+                </View>
+              )}
+
+              {deliveryStep === 'picked_up' && (
+                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.success }]} onPress={handleConfirmDelivery} activeOpacity={0.88}>
+                  <CheckCircle size={16} color={Colors.white} />
+                  <Text style={styles.actionBtnText}>CONFIRM DELIVERY (COD CHECK)</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Available Orders Pool */}
+        {!activeDelivery && (
+          <View style={styles.ordersSection}>
+            <View style={styles.ordersHeader}>
+              <Text style={styles.sectionTitle}>Available Dispatch Pool ({orders.length})</Text>
+              {gpsLoading && <ActivityIndicator size="small" color={Colors.primary} />}
+            </View>
+
+            {orders.map(o => (
+              <View key={o.id} style={styles.orderCard}>
+                <View style={styles.orderCardHeader}>
+                  <View>
+                    <Text style={styles.storeNameText}>{o.storeName}</Text>
+                    <Text style={styles.orderDistance}>{o.distanceKm} km · {o.itemsCount} items</Text>
+                  </View>
+                  <View style={styles.payoutColumn}>
+                    <Text style={styles.payoutText}>₹{o.payout + o.bonus}</Text>
+                    {o.hasBonus && <Text style={styles.bonusBadge}>+₹{o.bonus} Peak Bonus</Text>}
+                  </View>
+                </View>
+
+                <Text style={styles.deliveryPath}>{o.address}</Text>
+
+                <View style={styles.cardActions}>
+                  <TouchableOpacity style={styles.rejectBtn} onPress={() => handleRejectOrder(o.id)} activeOpacity={0.85}>
+                    <Text style={styles.rejectText}>Reject</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.claimBtn} onPress={() => handleAcceptOrder(o)} activeOpacity={0.85}>
+                    <Text style={styles.claimText}>Accept Order</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+
+            {orders.length === 0 && (
+              <View style={styles.noOrdersCard}>
+                <ShieldAlert size={36} color="rgba(255,255,255,0.2)" />
+                <Text style={styles.noOrdersText}>Waiting for new orders...</Text>
+                <Text style={styles.noOrdersSub}>We'll notify you as soon as orders are placed near your sector.</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Analytics & Performance Metrics */}
+        <View style={styles.performanceSection}>
+          <Text style={styles.sectionTitle}>Weekly Performance</Text>
+          <View style={styles.perfGrid}>
+            <View style={styles.perfCard}>
+              <Text style={styles.perfLabel}>Acceptance Rate</Text>
+              <Text style={styles.perfValue}>98.2%</Text>
+            </View>
+            <View style={styles.perfCard}>
+              <Text style={styles.perfLabel}>Avg Time</Text>
+              <Text style={styles.perfValue}>21 mins</Text>
+            </View>
+          </View>
         </View>
 
-        {/* ── Map Teaser ── */}
-        <TouchableOpacity style={styles.mapTeaser} activeOpacity={0.9}>
-          <LinearGradient colors={['#1A1210', '#0C0908']} style={styles.mapBg}>
-            {/* Fake map grid */}
-            <View style={styles.mapGrid}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <View key={i} style={styles.mapGridLine} />
-              ))}
-            </View>
-            {/* Hotspot dots */}
-            <View style={[styles.hotspot, { top: '30%', left: '25%' }]} />
-            <View style={[styles.hotspot, styles.hotspotLarge, { top: '50%', left: '55%' }]} />
-            <View style={[styles.hotspot, { top: '70%', left: '35%' }]} />
-          </LinearGradient>
-          <LinearGradient colors={['transparent', 'rgba(12,9,8,0.9)']} style={styles.mapOverlay}>
-            <View style={styles.mapFooter}>
-              <Text style={styles.mapLabel}>Explore Hotspots Nearby</Text>
-              <Map size={20} color={Colors.primary} strokeWidth={1.8} />
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <View style={{ height: 80 }} />
+        <View style={{ height: 60 }} />
       </ScrollView>
     </View>
   );
@@ -270,113 +461,95 @@ export default function RiderDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.dark.background },
-  scrollContent: { paddingBottom: 20 },
-
-  appBar: { backgroundColor: 'rgba(12,9,8,0.95)', borderBottomWidth: 1, borderBottomColor: Colors.dark.border },
+  appBar: { backgroundColor: '#0B0D14', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   appBarInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingVertical: 12 },
   appBarLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  appBarIconWrap: { width: 26, height: 26, borderRadius: 13, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
-  appBarTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 20, color: Colors.primary },
-  appBarRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  appBarIconWrap: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(255,107,0,0.15)', alignItems: 'center', justifyContent: 'center' },
+  appBarTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.primary },
+  appBarRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
-  onlineToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full },
-  onlineToggleOn: { backgroundColor: 'rgba(0,176,80,0.15)', borderWidth: 1, borderColor: 'rgba(0,176,80,0.3)' },
+  telemetryBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.07)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full },
+  telemetryText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 11, color: Colors.white },
+
+  onlineToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full },
+  onlineToggleOn: { backgroundColor: 'rgba(0,200,83,0.15)', borderWidth: 1, borderColor: 'rgba(0,200,83,0.3)' },
   onlineToggleOff: { backgroundColor: 'rgba(186,26,26,0.15)', borderWidth: 1, borderColor: 'rgba(186,26,26,0.3)' },
   onlineDot: { width: 8, height: 8, borderRadius: 4 },
-  onlineText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13 },
+  onlineText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 12 },
   onlineTextOn: { color: Colors.successLight },
   onlineTextOff: { color: Colors.error },
-  notifBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.07)', alignItems: 'center', justifyContent: 'center' },
 
-  // Earnings Hero
-  earningsCard: {
-    margin: Spacing.lg, borderRadius: Radius.xxl,
-    padding: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    overflow: 'hidden',
-  },
-  earningsGlow: {
-    position: 'absolute', top: -40, right: -40,
-    width: 160, height: 160, borderRadius: 80,
-    backgroundColor: Colors.primary + '20',
-  },
-  earningsLabel: { fontFamily: 'BeVietnamPro-Bold', fontSize: 11, color: Colors.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 },
-  earningsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
-  earningsAmount: { fontFamily: 'BeVietnamPro-ExtraBold', fontSize: 38, color: Colors.white },
-  earningsTrend: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.success + '30', paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.button },
-  trendIcon: { color: Colors.successLight, fontWeight: '700', fontSize: 14 },
-  trendText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13, color: Colors.successLight },
+  scrollContent: { padding: Spacing.lg },
 
-  statsGrid: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 20 },
+  // Earnings
+  earningsCard: { padding: 20, borderRadius: Radius.xxl, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  earningsLabel: { fontFamily: 'BeVietnamPro-Bold', fontSize: 10, color: Colors.primary, letterSpacing: 1.5 },
+  earningsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, marginBottom: 18 },
+  earningsAmount: { fontFamily: 'BeVietnamPro-ExtraBold', fontSize: 36, color: Colors.white },
+  earningsTrend: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,200,83,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full },
+  trendText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 12, color: Colors.successLight },
+
+  statsGrid: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 16 },
   statItem: { flex: 1, alignItems: 'center' },
   statDivider: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  statLabel: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 11, color: Colors.dark.textMuted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statValue: { fontFamily: 'BeVietnamPro-Bold', fontSize: 22, color: Colors.white },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  starIcon: { fontSize: 14 },
+  statLabel: { fontFamily: 'BeVietnamPro-Medium', fontSize: 11, color: Colors.dark.textMuted, marginBottom: 2 },
+  statValue: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.white },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
 
-  // Filter chips
-  filtersContainer: { marginBottom: 20 },
-  filters: { paddingHorizontal: Spacing.lg, gap: 8 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  filterChipActive: { backgroundColor: Colors.primary },
-  filterText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13, color: Colors.dark.textMuted },
-  filterTextActive: { color: Colors.white },
+  // Active workflow card
+  activeDeliveryCard: { backgroundColor: '#131924', borderWidth: 1.5, borderColor: Colors.primary + '30', borderRadius: Radius.xxl, padding: 20, marginBottom: 20, ...Shadows.md },
+  activeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingBottom: 12, marginBottom: 16 },
+  liveIndicator: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary + '15', paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full },
+  liveText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 10, color: Colors.primary },
+  orderNo: { fontFamily: 'BeVietnamPro-Bold', fontSize: 14, color: Colors.white },
 
-  // Orders
-  ordersSection: { paddingHorizontal: Spacing.lg },
-  ordersSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  ordersTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.white },
-  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  refreshText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.primary },
+  addressSection: { gap: 16, marginBottom: 20 },
+  addressRow: { flexDirection: 'row', gap: 12 },
+  addressType: { fontFamily: 'BeVietnamPro-Bold', fontSize: 11, color: Colors.dark.textMuted, textTransform: 'uppercase' },
+  addressText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 14, color: Colors.white, marginTop: 1 },
 
-  orderCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: Radius.xxl, padding: 16,
-    marginBottom: 12,
-  },
-  orderCardHighlight: { borderColor: Colors.primary + '40' },
+  stepController: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 16 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, paddingVertical: 14, borderRadius: Radius.xl },
+  actionBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 14, color: Colors.white, letterSpacing: 0.5 },
 
-  orderTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  orderLeft: { flexDirection: 'row', gap: 12, flex: 1 },
-  storeIcon: { width: 48, height: 48, borderRadius: Radius.xl, alignItems: 'center', justifyContent: 'center' },
-  storeEmoji: { fontSize: 24 },
-  storeName: { fontFamily: 'BeVietnamPro-Bold', fontSize: 16, color: Colors.white, marginBottom: 2 },
-  orderMeta: { ...TextStyles.bodySm, color: Colors.dark.textMuted },
+  // OTP Verification view
+  otpPanel: { padding: 8 },
+  otpTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.white },
+  otpSub: { fontFamily: 'BeVietnamPro-Regular', fontSize: 12, color: Colors.dark.textMuted, marginTop: 2, marginBottom: 12 },
+  otpInputRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  otpInput: { flex: 1, height: 48, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: Radius.xl, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 16, color: Colors.white, fontFamily: 'BeVietnamPro-Bold', fontSize: 18, textAlign: 'center' },
+  otpInputError: { borderColor: Colors.error },
+  otpVerifyBtn: { width: 48, height: 48, backgroundColor: Colors.primary, borderRadius: Radius.xl, alignItems: 'center', justifyContent: 'center' },
+  errorText: { fontFamily: 'BeVietnamPro-Medium', fontSize: 12, color: Colors.error, marginTop: 6 },
 
-  payoutContainer: { alignItems: 'flex-end' },
-  payout: { fontFamily: 'BeVietnamPro-Bold', fontSize: 20, color: Colors.primary },
-  bonusText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 11, color: Colors.successLight },
-  regularText: { ...TextStyles.micro, color: Colors.dark.textMuted },
+  // Available Orders Pool
+  ordersSection: {},
+  ordersHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  sectionTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.white },
 
-  orderBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
+  orderCard: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: Radius.xxl, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  orderCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+  storeNameText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 16, color: Colors.white },
+  orderDistance: { fontFamily: 'BeVietnamPro-Medium', fontSize: 12, color: Colors.dark.textMuted, marginTop: 1 },
+  payoutColumn: { alignItems: 'flex-end' },
+  payoutText: { fontFamily: 'BeVietnamPro-ExtraBold', fontSize: 20, color: Colors.primary },
+  bonusBadge: { fontFamily: 'BeVietnamPro-Bold', fontSize: 9, color: Colors.successLight, marginTop: 2 },
+  deliveryPath: { fontFamily: 'BeVietnamPro-Regular', fontSize: 13, color: Colors.dark.textSecondary, marginBottom: 16, lineHeight: 18 },
 
-  expiryRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  expiryText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.dark.textMuted },
-  expiryUrgent: { color: Colors.error },
+  cardActions: { flexDirection: 'row', gap: 10 },
+  rejectBtn: { flex: 1, paddingVertical: 12, borderRadius: Radius.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  rejectText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.dark.textSecondary },
+  claimBtn: { flex: 2, backgroundColor: Colors.primary, paddingVertical: 12, borderRadius: Radius.xl, alignItems: 'center', justifyContent: 'center' },
+  claimText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13, color: Colors.white },
 
-  itemPreview: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  itemDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary },
-  itemPreviewText: { ...TextStyles.bodySm, color: Colors.dark.textMuted },
+  noOrdersCard: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: Radius.xxl, borderStyle: 'dashed', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)' },
+  noOrdersText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.white, marginTop: 12, marginBottom: 4 },
+  noOrdersSub: { fontFamily: 'BeVietnamPro-Regular', fontSize: 12, color: Colors.dark.textMuted, textAlign: 'center', paddingHorizontal: 32, lineHeight: 18 },
 
-  acceptBtn: { backgroundColor: Colors.primary, borderRadius: Radius.xl, paddingHorizontal: 20, paddingVertical: 10, ...Shadows.primaryGlow },
-  acceptBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.1)', ...Shadows.none },
-  acceptBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13, color: Colors.white, letterSpacing: 0.5 },
-
-  noOrders: { alignItems: 'center', paddingVertical: 40 },
-  noOrdersEmoji: { fontSize: 48, marginBottom: 12 },
-  noOrdersText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.white, marginBottom: 6 },
-  noOrdersSub: { ...TextStyles.bodyLg, color: Colors.dark.textMuted },
-
-  // Map teaser
-  mapTeaser: { marginHorizontal: Spacing.lg, marginTop: 8, height: 160, borderRadius: Radius.xxl, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  mapBg: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  mapGrid: { position: 'absolute', inset: 0 },
-  mapGridLine: { flex: 1, borderBottomWidth: 1, borderBottomColor: Colors.primary + '15' },
-  hotspot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.primary },
-  hotspotLarge: { width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.primary + 'CC' },
-  mapOverlay: { position: 'absolute', inset: 0, justifyContent: 'flex-end' },
-  mapFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-  mapLabel: { fontFamily: 'BeVietnamPro-Bold', fontSize: 14, color: Colors.white },
-  mapIcon: { fontSize: 22 },
+  // Weekly Performance
+  performanceSection: { marginTop: 24 },
+  perfGrid: { flexDirection: 'row', gap: 12, marginTop: 12 },
+  perfCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: Radius.xl, borderLeftWidth: 3, borderLeftColor: Colors.primary },
+  perfLabel: { fontFamily: 'BeVietnamPro-Medium', fontSize: 12, color: Colors.dark.textMuted, marginBottom: 4 },
+  perfValue: { fontFamily: 'BeVietnamPro-Bold', fontSize: 20, color: Colors.white },
 });

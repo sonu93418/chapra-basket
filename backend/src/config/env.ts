@@ -9,4 +9,5 @@ export const env = {
   otpProvider: process.env.OTP_PROVIDER ?? 'mock',
   razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? '',
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET ?? '',
+  redisUrl: process.env.REDIS_URL ?? '',
 };

@@ -179,6 +179,10 @@ export const emitRiderLocation = (data: {
   lat: number;
   lng: number;
   heading?: number;
+  eta?: number;
+  speed?: number;
+  battery?: number;
+  networkStatus?: string;
 }): void => {
   socket?.emit(SOCKET_EVENTS.RIDER_LOCATION, data);
 };

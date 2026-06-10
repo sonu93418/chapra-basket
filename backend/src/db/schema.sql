@@ -157,6 +157,27 @@ create table rider_locations (
   created_at timestamptz not null default now()
 );
 
+-- High frequency telemetry log partitioned by monthly intervals
+create table rider_telemetry_history (
+  id uuid not null default uuid_generate_v4(),
+  order_id uuid not null references orders(id) on delete cascade,
+  rider_id uuid not null references users(id),
+  lat numeric(10, 7) not null,
+  lng numeric(10, 7) not null,
+  heading numeric(8, 2),
+  speed numeric(5, 2),
+  accuracy numeric(5, 2),
+  created_at timestamptz not null default now(),
+  primary key (id, created_at)
+) partition by range (created_at);
+
+-- Default partition and initial monthly partitions for 2026/2027
+create table rider_telemetry_history_default partition of rider_telemetry_history default;
+create table rider_telemetry_history_y2026m06 partition of rider_telemetry_history
+  for values from ('2026-06-01 00:00:00+00') to ('2026-07-01 00:00:00+00');
+create table rider_telemetry_history_y2026m07 partition of rider_telemetry_history
+  for values from ('2026-07-01 00:00:00+00') to ('2026-08-01 00:00:00+00');
+
 create table notifications (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references users(id) on delete cascade,
@@ -209,3 +230,4 @@ create index idx_orders_customer_status on orders(customer_id, status);
 create index idx_orders_rider_status on orders(rider_id, status);
 create index idx_notifications_user_read on notifications(user_id, is_read);
 create index idx_rider_locations_order_created on rider_locations(order_id, created_at desc);
+create index idx_rider_telemetry_history_order_time on rider_telemetry_history(order_id, created_at desc);

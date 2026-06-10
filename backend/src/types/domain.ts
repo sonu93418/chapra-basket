@@ -100,4 +100,7 @@ export interface RiderLocation {
   heading?: number;
   eta?: number;
   updatedAt: string;
+  speed?: number;
+  battery?: number;
+  networkStatus?: string;
 }

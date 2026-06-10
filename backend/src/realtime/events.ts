@@ -32,6 +32,7 @@ export function emitOrderStatus(order: Order, status: OrderStatus) {
 export function emitRiderLocation(location: RiderLocation) {
   io?.to(orderRoom(location.orderId)).emit(SOCKET_EVENTS.RIDER_LOCATION, location);
   io?.to(orderRoom(location.orderId)).emit(SOCKET_EVENTS.ETA_UPDATE, location);
+  io?.to('admin:monitoring').emit('admin:rider_update', location);
 }
 
 export function emitNotification(notification: Notification) {

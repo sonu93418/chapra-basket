@@ -22,6 +22,14 @@ export default function UserTypeScreen() {
     router.replace('/(rider)/' as any);
   };
 
+  const selectAdmin = () => {
+    dispatch(loginSuccess({
+      user: { id: 'admin-1', phone: '+919999999999', name: 'Ops Manager', role: 'admin', referralCode: 'OPS001', createdAt: new Date().toISOString() },
+      token: 'mock-admin-token',
+    }));
+    router.replace('/(admin)/' as any);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -54,6 +62,15 @@ export default function UserTypeScreen() {
           <Text style={styles.cardArrow}>→</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={[styles.card, styles.adminCard]} onPress={selectAdmin} activeOpacity={0.88}>
+          <Text style={styles.cardEmoji}>📊</Text>
+          <View style={styles.cardInfo}>
+            <Text style={[styles.cardTitle, { color: Colors.white }]}>Operations Portal</Text>
+            <Text style={[styles.cardDesc, { color: 'rgba(255,255,255,0.7)' }]}>Monitor active fleet, dispatch orders, track battery/signals, and view metrics.</Text>
+          </View>
+          <Text style={[styles.cardArrow, { color: '#4FC3F7' }]}>→</Text>
+        </TouchableOpacity>
+
         <Text style={styles.footer}>You can switch roles anytime from settings</Text>
       </View>
     </View>
@@ -74,6 +91,7 @@ const styles = StyleSheet.create({
   },
   customerCard: { backgroundColor: Colors.white, borderColor: Colors.primary, shadowColor: Colors.primary, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 },
   riderCard: { backgroundColor: Colors.dark.surface, borderColor: Colors.dark.border },
+  adminCard: { backgroundColor: '#101622', borderColor: '#2E3B52' },
   cardEmoji: { fontSize: 44 },
   cardInfo: { flex: 1 },
   cardTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.textPrimary, marginBottom: 4 },

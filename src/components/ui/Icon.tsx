@@ -113,4 +113,13 @@ export {
   Banknote,
   PartyPopper,
   Timer,
+  Play,
+  Square,
+  Battery,
+  Signal,
+  UserCheck,
+  Activity,
+  Compass,
+  Radio,
+  ShieldAlert,
 } from 'lucide-react-native';
