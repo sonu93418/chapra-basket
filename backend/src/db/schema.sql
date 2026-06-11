@@ -231,3 +231,63 @@ create index idx_orders_rider_status on orders(rider_id, status);
 create index idx_notifications_user_read on notifications(user_id, is_read);
 create index idx_rider_locations_order_created on rider_locations(order_id, created_at desc);
 create index idx_rider_telemetry_history_order_time on rider_telemetry_history(order_id, created_at desc);
+
+-- OTP & Session Management Upgrade
+create table if not exists otp_verifications (
+  id uuid primary key default uuid_generate_v4(),
+  phone varchar(20) not null,
+  otp_hash varchar(64) not null,
+  expires_at timestamptz not null,
+  attempts int not null default 0,
+  is_verified boolean not null default false,
+  ip_address varchar(45),
+  device_info text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists login_attempts (
+  id uuid primary key default uuid_generate_v4(),
+  phone varchar(20) not null,
+  ip_address varchar(45),
+  device_info text,
+  attempted_at timestamptz not null default now(),
+  success boolean not null default false
+);
+
+create table if not exists user_sessions (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references users(id) on delete cascade,
+  refresh_token_hash varchar(64) not null,
+  device_info text,
+  ip_address varchar(45),
+  is_active boolean not null default true,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists device_sessions (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references users(id) on delete cascade,
+  device_id varchar(120) not null,
+  device_name varchar(120),
+  push_token text,
+  last_active timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  unique(user_id, device_id)
+);
+
+create table if not exists otp_logs (
+  id uuid primary key default uuid_generate_v4(),
+  phone varchar(20) not null,
+  provider varchar(40) not null,
+  provider_message_id varchar(120),
+  delivery_status varchar(40) not null,
+  error_message text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_otp_verifications_phone_created on otp_verifications(phone, created_at desc);
+create index if not exists idx_user_sessions_token on user_sessions(refresh_token_hash);
+create index if not exists idx_login_attempts_phone on login_attempts(phone, attempted_at desc);
+

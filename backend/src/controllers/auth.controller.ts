@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { sendOtp, verifyOtp } from '../services/otp.service.js';
+import { sendOtp, verifyOtp, refreshSession, logoutSession } from '../services/otp.service.js';
 
 export const sendOtpSchema = z.object({
   phone: z.string().min(10),
@@ -12,23 +12,52 @@ export const verifyOtpSchema = z.object({
   role: z.enum(['customer', 'rider', 'store_owner', 'admin']).default('customer'),
 });
 
-export function sendOtpController(req: Request, res: Response) {
-  res.json({ success: true, data: sendOtp(req.body.phone) });
-}
+export const refreshSchema = z.object({
+  refreshToken: z.string().min(1),
+});
 
-export async function verifyOtpController(req: Request, res: Response) {
+export const logoutSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+export async function sendOtpController(req: Request, res: Response) {
   try {
-    const data = await verifyOtp(req.body.phone, req.body.code, req.body.role);
+    const ipAddress = req.ip || req.socket.remoteAddress || undefined;
+    const deviceInfo = req.headers['user-agent'] || undefined;
+    const data = await sendOtp(req.body.phone, ipAddress, deviceInfo);
     res.json({ success: true, data });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });
   }
 }
 
-export function refreshController(_req: Request, res: Response) {
-  res.json({ success: true, data: { refreshed: true } });
+export async function verifyOtpController(req: Request, res: Response) {
+  try {
+    const ipAddress = req.ip || req.socket.remoteAddress || undefined;
+    const deviceInfo = req.headers['user-agent'] || undefined;
+    const data = await verifyOtp(req.body.phone, req.body.code, req.body.role, ipAddress, deviceInfo);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }
 
-export function logoutController(_req: Request, res: Response) {
-  res.json({ success: true, data: { loggedOut: true } });
+export async function refreshController(req: Request, res: Response) {
+  try {
+    const ipAddress = req.ip || req.socket.remoteAddress || undefined;
+    const deviceInfo = req.headers['user-agent'] || undefined;
+    const data = await refreshSession(req.body.refreshToken, ipAddress, deviceInfo);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(401).json({ success: false, error: err.message });
+  }
+}
+
+export async function logoutController(req: Request, res: Response) {
+  try {
+    await logoutSession(req.body.refreshToken);
+    res.json({ success: true, data: { loggedOut: true } });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }

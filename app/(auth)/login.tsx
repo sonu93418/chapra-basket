@@ -25,9 +25,12 @@ export default function LoginScreen() {
     setError('');
     setIsLoading(true);
     try {
-      await sendOtpCall({ phone }).unwrap();
+      const res = await sendOtpCall({ phone }).unwrap();
       setIsLoading(false);
-      router.push({ pathname: '/(auth)/otp-verify', params: { phone } });
+      router.push({
+        pathname: '/(auth)/otp-verify',
+        params: { phone, devOtp: res.data?.devOtp || '' }
+      });
     } catch (err: any) {
       setIsLoading(false);
       setError(err?.data?.error || 'Failed to send OTP. Please try again.');

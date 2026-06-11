@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import {
   logoutController,
+  logoutSchema,
   refreshController,
+  refreshSchema,
   sendOtpController,
   sendOtpSchema,
   verifyOtpController,
@@ -13,5 +15,6 @@ export const authRouter = Router();
 
 authRouter.post('/send-otp', validateBody(sendOtpSchema), sendOtpController);
 authRouter.post('/verify-otp', validateBody(verifyOtpSchema), verifyOtpController);
-authRouter.post('/refresh', refreshController);
-authRouter.post('/logout', logoutController);
+authRouter.post('/refresh', validateBody(refreshSchema), refreshController);
+authRouter.post('/logout', validateBody(logoutSchema), logoutController);
+

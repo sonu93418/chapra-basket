@@ -11,13 +11,14 @@ import { useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { loginSuccess } from '../../src/features/auth/authSlice';
 import { ArrowLeft, Phone, RefreshCw, CheckCircle, AlertCircle, Info } from '../../src/components/ui/Icon';
 import { formatPhone } from '../../src/utils/format';
-import { useVerifyOtpMutation } from '../../src/api/authApi';
+import { useVerifyOtpMutation, useSendOtpMutation } from '../../src/api/authApi';
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 
 export default function OTPVerifyScreen() {
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { phone, devOtp } = useLocalSearchParams<{ phone: string; devOtp?: string }>();
+  const [localDevOtp, setLocalDevOtp] = useState(devOtp || '');
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(RESEND_SECONDS);
@@ -26,6 +27,7 @@ export default function OTPVerifyScreen() {
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const dispatch = useAppDispatch();
   const [verifyOtpCall] = useVerifyOtpMutation();
+  const [sendOtpCall] = useSendOtpMutation();
 
   // Shake animation for wrong OTP
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -101,12 +103,23 @@ export default function OTPVerifyScreen() {
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (resendTimer > 0) return;
-    setResendTimer(RESEND_SECONDS);
-    setOtp(Array(OTP_LENGTH).fill(''));
     setError('');
-    inputRefs.current[0]?.focus();
+    setIsLoading(true);
+    try {
+      const res = await sendOtpCall({ phone: phone || '' }).unwrap();
+      setIsLoading(false);
+      setResendTimer(RESEND_SECONDS);
+      setOtp(Array(OTP_LENGTH).fill(''));
+      inputRefs.current[0]?.focus();
+      if (res.data?.devOtp) {
+        setLocalDevOtp(res.data.devOtp);
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err?.data?.error || 'Failed to resend OTP. Please try again.');
+    }
   };
 
   const filledCount = otp.filter(Boolean).length;
@@ -198,13 +211,15 @@ export default function OTPVerifyScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Demo hint */}
-        <View style={styles.demoHint}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <Info size={14} color={Colors.warning} strokeWidth={2.5} />
-            <Text style={styles.demoText}>Demo mode: Enter any 6 digits to login</Text>
+        {/* Development Helper hint */}
+        {localDevOtp ? (
+          <View style={styles.demoHint}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Info size={14} color={Colors.warning} strokeWidth={2.5} />
+              <Text style={styles.demoText}>Development OTP code: {localDevOtp}</Text>
+            </View>
           </View>
-        </View>
+        ) : null}
 
         <Button
           label={isLoading ? 'Verifying...' : success ? 'Taking you in...' : 'Verify & Continue'}
