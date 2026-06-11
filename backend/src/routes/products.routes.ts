@@ -5,7 +5,9 @@ import {
   getProduct,
   listProducts,
   trendingProducts,
+  updateProduct,
 } from '../controllers/products.controller.js';
+import { requireAuth } from '../middleware/auth.js';
 
 export const productsRouter = Router();
 
@@ -14,3 +16,5 @@ productsRouter.get('/featured', featuredProducts);
 productsRouter.get('/flash-sale', flashSaleProducts);
 productsRouter.get('/trending', trendingProducts);
 productsRouter.get('/:id', getProduct);
+productsRouter.patch('/:id', requireAuth, updateProduct);
+

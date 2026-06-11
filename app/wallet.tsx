@@ -1,17 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList,
+  ActivityIndicator, Alert, TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../src/theme';
-import { MOCK_WALLET_TRANSACTIONS } from '../src/data/mockData';
-import { WalletTransaction } from '../src/types';
+import { useGetWalletDataQuery, useTopupWalletMutation } from '../src/api/walletApi';
 import { ArrowLeft, TrendingUp, TrendingDown, CreditCard, Zap, Gift, Lock, RotateCcw } from '../src/components/ui/Icon';
-
-const BALANCE = 120;
 
 const QUICK_AMOUNTS = [50, 100, 200, 500];
 
@@ -20,15 +18,45 @@ function timeAgo(dateStr: string): string {
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 60) return `${Math.max(mins, 0)}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return `${days}d ago`;
 }
 
 export default function WalletScreen() {
-  const transactions = MOCK_WALLET_TRANSACTIONS;
-  const credits = transactions.filter((t: WalletTransaction) => t.type === 'credit').reduce((s: number, t: WalletTransaction) => s + t.amount, 0);
-  const debits = transactions.filter((t: WalletTransaction) => t.type === 'debit').reduce((s: number, t: WalletTransaction) => s + t.amount, 0);
+  const { data: wallet, isLoading, error } = useGetWalletDataQuery();
+  const [topupCall, { isLoading: isTopupLoading }] = useTopupWalletMutation();
+  const [selectedAmount, setSelectedAmount] = useState<number>(100);
+  const [customAmount, setCustomAmount] = useState<string>('');
+
+  const balance = wallet?.balance ?? 0;
+  const transactions = wallet?.transactions ?? [];
+  const credits = transactions.filter((t: any) => t.type === 'credit').reduce((s: number, t: any) => s + t.amount, 0);
+  const debits = transactions.filter((t: any) => t.type === 'debit').reduce((s: number, t: any) => s + t.amount, 0);
+
+  const handleAddMoney = async () => {
+    const finalAmt = customAmount ? Number(customAmount) : selectedAmount;
+    if (isNaN(finalAmt) || finalAmt <= 0) {
+      Alert.alert('Validation Error', 'Please select or enter a valid amount to add.');
+      return;
+    }
+
+    try {
+      await topupCall({ amount: finalAmt }).unwrap();
+      Alert.alert('Top-up Success', `₹${finalAmt} added successfully to your Chapra Basket Wallet!`);
+      setCustomAmount('');
+    } catch (err: any) {
+      Alert.alert('Top-up Failed', err?.data?.error || 'Failed to add money. Please try again.');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -60,7 +88,7 @@ export default function WalletScreen() {
           <View style={styles.decorCircle2} />
 
           <Text style={styles.balanceLabel}>Total Balance</Text>
-          <Text style={styles.balanceAmount}>₹{BALANCE}</Text>
+          <Text style={styles.balanceAmount}>₹{balance}</Text>
 
           <View style={styles.balanceStats}>
             <View style={styles.balanceStat}>
@@ -86,19 +114,37 @@ export default function WalletScreen() {
           <Text style={styles.sectionTitle}>Add Money</Text>
           <View style={styles.quickAmounts}>
             {QUICK_AMOUNTS.map(amt => (
-              <TouchableOpacity key={amt} style={styles.amountChip} activeOpacity={0.8}>
-                <Text style={styles.amountChipText}>+₹{amt}</Text>
+              <TouchableOpacity
+                key={amt}
+                style={[
+                  styles.amountChip,
+                  selectedAmount === amt && !customAmount && { borderColor: Colors.primary, backgroundColor: Colors.primaryContainer }
+                ]}
+                onPress={() => { setSelectedAmount(amt); setCustomAmount(''); }}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.amountChipText, selectedAmount === amt && !customAmount && { color: Colors.primary }]}>+₹{amt}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity style={styles.addMoneyBtn} activeOpacity={0.85}>
+
+          <TextInput
+            style={styles.customAmountInput}
+            placeholder="Or enter custom amount (e.g. 250)"
+            placeholderTextColor={Colors.textPlaceholder}
+            keyboardType="number-pad"
+            value={customAmount}
+            onChangeText={setCustomAmount}
+          />
+
+          <TouchableOpacity style={styles.addMoneyBtn} onPress={handleAddMoney} disabled={isTopupLoading} activeOpacity={0.85}>
             <LinearGradient
               colors={[Colors.primary, Colors.primaryDark]}
               style={[styles.addMoneyGradient, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             >
               <CreditCard size={18} color={Colors.white} />
-              <Text style={styles.addMoneyText}>Add Money</Text>
+              <Text style={styles.addMoneyText}>{isTopupLoading ? 'Adding Balance...' : 'Add Money'}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -128,30 +174,34 @@ export default function WalletScreen() {
         {/* Transactions */}
         <View style={[styles.section, Shadows.sm]}>
           <Text style={styles.sectionTitle}>Transaction History</Text>
-          {transactions.map((txn, i) => (
-            <View key={txn.id} style={[styles.txnRow, i < transactions.length - 1 && styles.txnBorder]}>
-              <View style={[
-                styles.txnIcon,
-                { backgroundColor: txn.type === 'credit' ? Colors.successContainer : '#FFF1F0' }
-              ]}>
-                {txn.type === 'credit' ? (
-                  <TrendingUp size={20} color={Colors.success} />
-                ) : (
-                  <TrendingDown size={20} color={Colors.error} />
-                )}
+          {transactions.length === 0 ? (
+            <Text style={{ fontFamily: 'BeVietnamPro-Regular', fontSize: 13, color: Colors.textMuted, textAlign: 'center', paddingVertical: 14 }}>No transactions yet.</Text>
+          ) : (
+            transactions.map((txn, i) => (
+              <View key={txn.id} style={[styles.txnRow, i < transactions.length - 1 && styles.txnBorder]}>
+                <View style={[
+                  styles.txnIcon,
+                  { backgroundColor: txn.type === 'credit' ? Colors.successContainer : '#FFF1F0' }
+                ]}>
+                  {txn.type === 'credit' ? (
+                    <TrendingUp size={20} color={Colors.success} />
+                  ) : (
+                    <TrendingDown size={20} color={Colors.error} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.txnDesc}>{txn.description}</Text>
+                  <Text style={styles.txnTime}>{timeAgo(txn.createdAt)}</Text>
+                </View>
+                <Text style={[
+                  styles.txnAmount,
+                  { color: txn.type === 'credit' ? Colors.success : Colors.error }
+                ]}>
+                  {txn.type === 'credit' ? '+' : '-'}₹{txn.amount}
+                </Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.txnDesc}>{txn.description}</Text>
-                <Text style={styles.txnTime}>{timeAgo(txn.createdAt)}</Text>
-              </View>
-              <Text style={[
-                styles.txnAmount,
-                { color: txn.type === 'credit' ? Colors.success : Colors.error }
-              ]}>
-                {txn.type === 'credit' ? '+' : '-'}₹{txn.amount}
-              </Text>
-            </View>
-          ))}
+            ))
+          )}
         </View>
 
         <View style={{ height: 30 }} />
@@ -162,6 +212,15 @@ export default function WalletScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  customAmountInput: {
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.xl,
+    padding: 12,
+    marginBottom: 14,
+    fontFamily: 'BeVietnamPro-Medium',
+    color: Colors.textPrimary,
+  },
 
   header: {
     flexDirection: 'row', alignItems: 'center',

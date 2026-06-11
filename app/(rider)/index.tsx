@@ -16,7 +16,7 @@ import { SensorFusionEngine } from '../../src/utils/sensorFusion';
 import {
   MapPin, Bell, Clock, Star, TrendingUp, RefreshCw,
   Map, Store, Package, Check, Phone, MessageCircle, Navigation,
-  ShieldAlert, LogOut, CheckCircle, Battery, Radio, Compass,
+  ShieldAlert, LogOut, CheckCircle, Battery, Radio, Compass, Camera, Image as ImageIcon,
 } from '../../src/components/ui/Icon';
 
 const { width } = Dimensions.get('window');
@@ -81,6 +81,8 @@ export default function RiderDashboard() {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [batteryLevel, setBatteryLevel] = useState(88);
   const [networkSignal, setNetworkSignal] = useState('Excellent');
+  const [proofCaptured, setProofCaptured] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   const onlineAnim = useRef(new Animated.Value(isOnline ? 1 : 0)).current;
   const locationWatcherRef = useRef<Location.LocationSubscription | null>(null);
@@ -209,6 +211,8 @@ export default function RiderDashboard() {
 
   // Order Management Actions
   const handleAcceptOrder = (orderItem: any) => {
+    setProofCaptured(false);
+    setIsCapturing(false);
     dispatch(setActiveOrder(orderItem.id));
     setActiveDelivery(orderItem);
     setDeliveryStep('accepted');
@@ -262,6 +266,8 @@ export default function RiderDashboard() {
     dispatch(setActiveOrder(null));
     setActiveDelivery(null);
     setDeliveryStep('accepted');
+    setProofCaptured(false);
+    setIsCapturing(false);
     alert('Delivery completed successfully! Payout credited to your wallet.');
   };
 
@@ -402,10 +408,48 @@ export default function RiderDashboard() {
               )}
 
               {deliveryStep === 'picked_up' && (
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.success }]} onPress={handleConfirmDelivery} activeOpacity={0.88}>
-                  <CheckCircle size={16} color={Colors.white} />
-                  <Text style={styles.actionBtnText}>CONFIRM DELIVERY (COD CHECK)</Text>
-                </TouchableOpacity>
+                <View style={{ gap: 12 }}>
+                  {!proofCaptured ? (
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, { backgroundColor: Colors.primary }]} 
+                      onPress={async () => {
+                        setIsCapturing(true);
+                        await new Promise(r => setTimeout(r, 1000));
+                        setIsCapturing(false);
+                        setProofCaptured(true);
+                      }}
+                      disabled={isCapturing}
+                      activeOpacity={0.88}
+                    >
+                      {isCapturing ? (
+                        <ActivityIndicator size="small" color={Colors.white} />
+                      ) : (
+                        <Camera size={16} color={Colors.white} />
+                      )}
+                      <Text style={styles.actionBtnText}>
+                        {isCapturing ? 'CAPTURING PROOF...' : 'TAKE PROOF OF DELIVERY PHOTO'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={{ gap: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: Radius.xl }}>
+                        <ImageIcon size={20} color={Colors.successLight} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontFamily: 'BeVietnamPro-Bold', fontSize: 13, color: Colors.white }}>Proof of Delivery Saved</Text>
+                          <Text style={{ fontFamily: 'BeVietnamPro-Regular', fontSize: 11, color: Colors.dark.textMuted }}>pod_confirmation.jpg</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => setProofCaptured(false)}>
+                          <Text style={{ fontFamily: 'BeVietnamPro-Bold', fontSize: 12, color: Colors.error }}>Retake</Text>
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.success }]} onPress={handleConfirmDelivery} activeOpacity={0.88}>
+                        <CheckCircle size={16} color={Colors.white} />
+                        <Text style={styles.actionBtnText}>CONFIRM DELIVERY (COD CHECK)</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               )}
             </View>
           </View>

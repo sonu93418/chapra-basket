@@ -12,6 +12,7 @@ import { reviewsRouter } from './reviews.routes.js';
 import { riderRouter } from './rider.routes.js';
 import { storesRouter } from './stores.routes.js';
 import { walletRouter } from './wallet.routes.js';
+import { userRouter } from './user.routes.js';
 
 export const apiRouter = Router();
 
@@ -28,3 +29,4 @@ apiRouter.use('/wallet', walletRouter);
 apiRouter.use('/referrals', referralsRouter);
 apiRouter.use('/reviews', reviewsRouter);
 apiRouter.use('/admin', adminRouter);
+apiRouter.use('/user', userRouter);

@@ -6,7 +6,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   token: string | null;
-  role: 'customer' | 'rider' | 'admin' | null;
+  role: 'customer' | 'rider' | 'admin' | 'store_owner' | null;
 }
 
 const initialState: AuthState = {

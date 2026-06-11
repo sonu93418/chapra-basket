@@ -17,6 +17,7 @@ export const createOrderSchema = z.object({
   items: z.array(z.object({ productId: z.string(), quantity: z.number().int().positive() })).optional(),
   paymentMethod: z.enum(['upi', 'card', 'cod', 'wallet', 'netbanking']).default('cod'),
   couponDiscount: z.number().min(0).optional(),
+  addressId: z.string().optional(),
 });
 
 export const updateOrderStatusSchema = z.object({
@@ -32,52 +33,74 @@ function paramId(req: Request) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function listOrdersController(req: Request, res: Response) {
-  res.json({ success: true, data: { items: listOrders(userId(req)), total: listOrders(userId(req)).length } });
+export async function listOrdersController(req: Request, res: Response) {
+  try {
+    const list = await listOrders(userId(req));
+    res.json({ success: true, data: { items: list, total: list.length } });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }
 
-export function getOrderController(req: Request, res: Response) {
-  const order = getOrder(paramId(req));
-  if (!order) return res.status(404).json({ success: false, error: 'Order not found' });
-  res.json({ success: true, data: order });
+export async function getOrderController(req: Request, res: Response) {
+  try {
+    const order = await getOrder(paramId(req));
+    if (!order) return res.status(404).json({ success: false, error: 'Order not found' });
+    res.json({ success: true, data: order });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }
 
-export function createOrderController(req: Request, res: Response) {
-  const customerId = userId(req);
-  const items = req.body.items ?? carts[customerId] ?? [];
-  const order = createOrder({
-    customerId,
-    items,
-    paymentMethod: req.body.paymentMethod as PaymentMethod,
-    couponDiscount: req.body.couponDiscount,
-  });
+export async function createOrderController(req: Request, res: Response) {
+  try {
+    const customerId = userId(req);
+    const items = req.body.items ?? carts[customerId] ?? [];
+    const order = await createOrder({
+      customerId,
+      items,
+      paymentMethod: req.body.paymentMethod as PaymentMethod,
+      couponDiscount: req.body.couponDiscount,
+      addressId: req.body.addressId,
+    });
 
-  clearCart(customerId);
-  emitOrderCreated(order);
-  emitNotification({
-    id: `ntf-${Date.now()}`,
-    userId: customerId,
-    title: 'Order placed',
-    body: `Your order ${order.orderNumber} has been placed.`,
-    type: 'order_update',
-    isRead: false,
-    data: { orderId: order.id },
-    createdAt: new Date().toISOString(),
-  });
+    clearCart(customerId);
+    emitOrderCreated(order);
+    emitNotification({
+      id: `ntf-${Date.now()}`,
+      userId: customerId,
+      title: 'Order placed',
+      body: `Your order ${order.orderNumber} has been placed.`,
+      type: 'order_update',
+      isRead: false,
+      data: { orderId: order.id },
+      createdAt: new Date().toISOString(),
+    });
 
-  res.status(201).json({ success: true, data: order });
+    res.status(201).json({ success: true, data: order });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }
 
-export function updateOrderStatusController(req: Request, res: Response) {
-  const order = updateOrderStatus(paramId(req), req.body.status);
-  emitOrderStatus(order, req.body.status);
-  res.json({ success: true, data: order });
+export async function updateOrderStatusController(req: Request, res: Response) {
+  try {
+    const order = await updateOrderStatus(paramId(req), req.body.status);
+    emitOrderStatus(order, req.body.status);
+    res.json({ success: true, data: order });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }
 
-export function cancelOrderController(req: Request, res: Response) {
-  const order = cancelOrder(paramId(req));
-  emitOrderStatus(order, 'cancelled');
-  res.json({ success: true, data: order });
+export async function cancelOrderController(req: Request, res: Response) {
+  try {
+    const order = await cancelOrder(paramId(req));
+    emitOrderStatus(order, 'cancelled');
+    res.json({ success: true, data: order });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }
 
 export function getTrackingController(req: Request, res: Response) {

@@ -53,6 +53,7 @@ export default function RootLayout() {
             <Stack.Screen name="(customer)" />
             <Stack.Screen name="(rider)" />
             <Stack.Screen name="(admin)" />
+            <Stack.Screen name="(store)" />
           </Stack>
         </SafeAreaProvider>
       </GestureHandlerRootView>

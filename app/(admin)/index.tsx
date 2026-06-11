@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  FlatList, Dimensions, ActivityIndicator,
+  FlatList, Dimensions, ActivityIndicator, Alert, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -13,7 +13,9 @@ import {
   MapPin, Bell, Clock, Star, TrendingUp, RefreshCw,
   Map, Store, Package, Check, Phone, MessageCircle, Navigation,
   ShieldAlert, LogOut, Radio, Battery, Signal, UserCheck, Activity, Bike,
+  Search, User, X
 } from '../../src/components/ui/Icon';
+import { useGetAdminUsersQuery, useUpdateUserRoleMutation } from '../../src/api/adminApi';
 
 const { width } = Dimensions.get('window');
 
@@ -63,7 +65,29 @@ const INITIAL_FLEET = {
 
 export default function AdminDashboard() {
   const [ridersMap, setRidersMap] = useState<Record<string, any>>(INITIAL_FLEET);
-  const [activeTab, setActiveTab] = useState<'fleet' | 'metrics'>('fleet');
+  const [activeTab, setActiveTab] = useState<'fleet' | 'metrics' | 'users'>('fleet');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  // Admin APIs
+  const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useGetAdminUsersQuery(undefined, {
+    skip: activeTab !== 'users'
+  });
+  const [updateUserRole, { isLoading: isUpdatingRole }] = useUpdateUserRoleMutation();
+
+  const handleRoleChange = async (userId: string, newRole: any) => {
+    try {
+      await updateUserRole({ userId, role: newRole }).unwrap();
+      refetchUsers();
+      Alert.alert('Success', `User role successfully updated to ${newRole}`);
+    } catch (err: any) {
+      Alert.alert('Error', err?.data?.error || 'Failed to update user role');
+    }
+  };
+
+  const filteredUsers = users?.filter(u =>
+    u.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+    u.phone.includes(userSearchQuery)
+  ) || [];
 
   // Register telemetry sockets on connection
   useEffect(() => {
@@ -202,13 +226,19 @@ export default function AdminDashboard() {
             style={[styles.tab, activeTab === 'fleet' && styles.tabActive]}
             onPress={() => setActiveTab('fleet')}
           >
-            <Text style={[styles.tabText, activeTab === 'fleet' && styles.tabTextActive]}>Fleet Tracking ({ridersList.length})</Text>
+            <Text style={[styles.tabText, activeTab === 'fleet' && styles.tabTextActive]}>Fleet ({ridersList.length})</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'users' && styles.tabActive]}
+            onPress={() => setActiveTab('users')}
+          >
+            <Text style={[styles.tabText, activeTab === 'users' && styles.tabTextActive]}>User Roles</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'metrics' && styles.tabActive]}
             onPress={() => setActiveTab('metrics')}
           >
-            <Text style={[styles.tabText, activeTab === 'metrics' && styles.tabTextActive]}>Analytics Summary</Text>
+            <Text style={[styles.tabText, activeTab === 'metrics' && styles.tabTextActive]}>Analytics</Text>
           </TouchableOpacity>
         </View>
 
@@ -281,6 +311,83 @@ export default function AdminDashboard() {
           </View>
         )}
 
+        {/* User Roles Access Control Tab */}
+        {activeTab === 'users' && (
+          <View style={styles.usersTabContainer}>
+            {/* Search Input */}
+            <View style={styles.userSearchBox}>
+              <Search size={16} color="rgba(255,255,255,0.4)" style={{ marginRight: 8 }} />
+              <TextInput
+                style={styles.userSearchInput}
+                placeholder="Search user name or phone..."
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                value={userSearchQuery}
+                onChangeText={setUserSearchQuery}
+              />
+              {userSearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setUserSearchQuery('')}>
+                  <X size={16} color="rgba(255,255,255,0.5)" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {usersLoading ? (
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: 30 }} />
+            ) : filteredUsers.length === 0 ? (
+              <View style={styles.emptyUsersBox}>
+                <User size={36} color="rgba(255,255,255,0.15)" />
+                <Text style={styles.emptyUsersText}>No users found in database.</Text>
+              </View>
+            ) : (
+              filteredUsers.map(user => (
+                <View key={user.id} style={styles.userCard}>
+                  <View style={styles.userCardHeader}>
+                    <View style={styles.userInfoLeft}>
+                      <View style={styles.userAvatarBox}>
+                        <User size={18} color={Colors.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.userNameText}>{user.name || 'Anonymous User'}</Text>
+                        <Text style={styles.userPhoneText}>{user.phone}</Text>
+                      </View>
+                    </View>
+                    <View style={[styles.userRoleBadge, {
+                      backgroundColor: user.role === 'admin' ? 'rgba(79,195,247,0.15)' :
+                        user.role === 'store_owner' ? 'rgba(255,107,0,0.15)' :
+                        user.role === 'rider' ? 'rgba(0,200,83,0.15)' : 'rgba(255,255,255,0.08)'
+                    }]}>
+                      <Text style={[styles.userRoleBadgeText, {
+                        color: user.role === 'admin' ? '#4FC3F7' :
+                          user.role === 'store_owner' ? Colors.primary :
+                          user.role === 'rider' ? Colors.successLight : Colors.white
+                      }]}>
+                        {user.role.toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.roleLabelText}>Mutate Access Permission:</Text>
+                  <View style={styles.roleButtonGrid}>
+                    {(['customer', 'rider', 'store_owner', 'admin'] as const).map(role => (
+                      <TouchableOpacity
+                        key={role}
+                        style={[styles.roleSelectBtn, user.role === role && styles.roleSelectBtnActive]}
+                        onPress={() => handleRoleChange(user.id, role)}
+                        disabled={isUpdatingRole}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.roleSelectBtnText, user.role === role && styles.roleSelectBtnTextActive]}>
+                          {role === 'store_owner' ? 'Store' : role.charAt(0).toUpperCase() + role.slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        )}
+
         <View style={{ height: 60 }} />
       </ScrollView>
     </View>
@@ -349,4 +456,25 @@ const styles = StyleSheet.create({
   metricsCard: { backgroundColor: 'rgba(255,255,255,0.03)', padding: 18, borderRadius: Radius.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   metricsTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.white },
   metricsSub: { fontFamily: 'BeVietnamPro-Regular', fontSize: 13, color: Colors.dark.textMuted, marginTop: 6, lineHeight: 18 },
+
+  // User Management
+  usersTabContainer: { gap: 12 },
+  userSearchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: Radius.full, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 8 },
+  userSearchInput: { flex: 1, color: Colors.white, fontFamily: 'BeVietnamPro-Medium', fontSize: 13, padding: 0 },
+  emptyUsersBox: { alignItems: 'center', paddingVertical: 40, opacity: 0.7 },
+  emptyUsersText: { fontFamily: 'BeVietnamPro-Medium', fontSize: 13, color: Colors.dark.textMuted, marginTop: 8 },
+  userCard: { backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)', borderRadius: Radius.xl, padding: 14, marginBottom: 10 },
+  userCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  userInfoLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  userAvatarBox: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,107,0,0.1)', alignItems: 'center', justifyContent: 'center' },
+  userNameText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 14, color: Colors.white },
+  userPhoneText: { fontFamily: 'BeVietnamPro-Medium', fontSize: 11, color: Colors.dark.textMuted, marginTop: 1 },
+  userRoleBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full },
+  userRoleBadgeText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 8 },
+  roleLabelText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 11, color: Colors.dark.textSecondary, marginBottom: 8 },
+  roleButtonGrid: { flexDirection: 'row', gap: 6, justifyContent: 'space-between' },
+  roleSelectBtn: { flex: 1, paddingVertical: 8, borderRadius: Radius.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.01)', alignItems: 'center' },
+  roleSelectBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  roleSelectBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 10, color: Colors.dark.textSecondary },
+  roleSelectBtnTextActive: { color: Colors.white },
 });

@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import { getReferralInfo } from '../controllers/referrals.controller.js';
+import { optionalAuth } from '../middleware/auth.js';
 
 export const referralsRouter = Router();
 
-referralsRouter.get('/', (_req, res) => {
-  res.json({ success: true, data: { code: 'CB1234', rewardPerReferral: 50, successfulReferrals: 0 } });
-});
+referralsRouter.use(optionalAuth);
+referralsRouter.get('/', getReferralInfo);

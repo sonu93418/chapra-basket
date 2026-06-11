@@ -103,7 +103,7 @@ export function attachRealtimeServer(server: http.Server) {
         const payload = riderLocationSchema.parse(rawPayload);
 
         // Security Guard: Verify that the rider is assigned to the order
-        const order = getOrder(payload.orderId);
+        const order = await getOrder(payload.orderId);
         if (!order) {
           console.warn(`[Socket] Location rejected: Order ${payload.orderId} not found.`);
           return;
@@ -145,7 +145,7 @@ export function attachRealtimeServer(server: http.Server) {
         }
 
         const payload = locationSyncSchema.parse(rawPayload);
-        const order = getOrder(payload.orderId);
+        const order = await getOrder(payload.orderId);
         if (!order || order.riderId !== user.id) {
           console.warn(`[Socket] Batch sync rejected: Unassigned or invalid order ${payload.orderId}`);
           return;
@@ -182,8 +182,8 @@ export function attachRealtimeServer(server: http.Server) {
       }
     });
 
-    socket.on('order:update_status', ({ orderId, status }: { orderId: string; status: any }) => {
-      const order = updateOrderStatus(orderId, status);
+    socket.on('order:update_status', async ({ orderId, status }: { orderId: string; status: any }) => {
+      const order = await updateOrderStatus(orderId, status);
       emitOrderStatus(order, status);
     });
 

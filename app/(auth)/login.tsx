@@ -9,12 +9,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
 import { Button } from '../../src/components/ui/Button';
 import { Phone, Shield, Bike, ChevronRight, ShoppingBag, Check } from '../../src/components/ui/Icon';
+import { useSendOtpMutation } from '../../src/api/authApi';
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [sendOtpCall] = useSendOtpMutation();
 
   const isValid = phone.length === 10 && /^[6-9]\d{9}$/.test(phone);
 
@@ -22,9 +24,14 @@ export default function LoginScreen() {
     if (!isValid) { setError('Please enter a valid 10-digit mobile number'); return; }
     setError('');
     setIsLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setIsLoading(false);
-    router.push({ pathname: '/(auth)/otp-verify', params: { phone } });
+    try {
+      await sendOtpCall({ phone }).unwrap();
+      setIsLoading(false);
+      router.push({ pathname: '/(auth)/otp-verify', params: { phone } });
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err?.data?.error || 'Failed to send OTP. Please try again.');
+    }
   };
 
   return (

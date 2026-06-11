@@ -11,6 +11,7 @@ import { useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { loginSuccess } from '../../src/features/auth/authSlice';
 import { ArrowLeft, Phone, RefreshCw, CheckCircle, AlertCircle, Info } from '../../src/components/ui/Icon';
 import { formatPhone } from '../../src/utils/format';
+import { useVerifyOtpMutation } from '../../src/api/authApi';
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
@@ -24,6 +25,7 @@ export default function OTPVerifyScreen() {
   const [success, setSuccess] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const dispatch = useAppDispatch();
+  const [verifyOtpCall] = useVerifyOtpMutation();
 
   // Shake animation for wrong OTP
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -80,26 +82,23 @@ export default function OTPVerifyScreen() {
       return;
     }
     setIsLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
+    try {
+      const res = await verifyOtpCall({ phone: phone || '', code: enteredOtp }).unwrap();
+      setSuccess(true);
+      await new Promise(r => setTimeout(r, 600));
 
-    // Mock success — any OTP works
-    setSuccess(true);
-    await new Promise(r => setTimeout(r, 600));
+      dispatch(loginSuccess({
+        user: res.data.user,
+        token: res.data.token,
+      }));
 
-    dispatch(loginSuccess({
-      user: {
-        id: 'user-1',
-        phone: phone || '+919876543210',
-        name: 'Anup Kumar',
-        role: 'customer',
-        referralCode: 'ANUP2024',
-        createdAt: new Date().toISOString(),
-      },
-      token: 'mock-jwt-token',
-    }));
-
-    setIsLoading(false);
-    router.replace('/(customer)' as any);
+      setIsLoading(false);
+      router.replace('/(customer)' as any);
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err?.data?.error || 'Invalid OTP. Please try again.');
+      shake();
+    }
   };
 
   const handleResend = () => {

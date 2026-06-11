@@ -77,7 +77,7 @@ export const ordersApi = baseApi.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'Orders', id }],
     }),
 
-    createOrder: builder.mutation<Order, { addressId: string; paymentMethod: string; couponCode?: string }>({
+    createOrder: builder.mutation<Order, { addressId: string; paymentMethod: string; couponCode?: string; items: { productId: string; quantity: number }[]; couponDiscount?: number }>({
       query: (body) => ({ url: ENDPOINTS.ORDERS, method: 'POST', body }),
       invalidatesTags: ['Orders', 'Cart'],
     }),
@@ -91,6 +91,15 @@ export const ordersApi = baseApi.injectEndpoints({
       query: ({ id, ...body }) => ({ url: `/orders/${id}/review`, method: 'POST', body }),
       invalidatesTags: ['Orders'],
     }),
+
+    updateOrderStatus: builder.mutation<Order, { id: string; status: OrderStatus }>({
+      query: ({ id, status }) => ({
+        url: `/orders/${id}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: ['Orders'],
+    }),
   }),
 });
 
@@ -101,4 +110,5 @@ export const {
   useCreateOrderMutation,
   useCancelOrderMutation,
   useRateOrderMutation,
+  useUpdateOrderStatusMutation,
 } = ordersApi;

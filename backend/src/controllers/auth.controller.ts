@@ -16,8 +16,13 @@ export function sendOtpController(req: Request, res: Response) {
   res.json({ success: true, data: sendOtp(req.body.phone) });
 }
 
-export function verifyOtpController(req: Request, res: Response) {
-  res.json({ success: true, data: verifyOtp(req.body.phone, req.body.code, req.body.role) });
+export async function verifyOtpController(req: Request, res: Response) {
+  try {
+    const data = await verifyOtp(req.body.phone, req.body.code, req.body.role);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 }
 
 export function refreshController(_req: Request, res: Response) {

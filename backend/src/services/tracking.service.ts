@@ -18,7 +18,7 @@ function getHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: nu
 }
 
 export async function getTracking(orderId: string) {
-  const order = getOrder(orderId);
+  const order = await getOrder(orderId);
   if (!order) throw new Error('Order not found');
 
   const liveLoc = await getRiderLocation(orderId);
