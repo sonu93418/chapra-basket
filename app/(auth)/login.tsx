@@ -33,7 +33,11 @@ export default function LoginScreen() {
       });
     } catch (err: any) {
       setIsLoading(false);
-      setError(err?.data?.error || 'Failed to send OTP. Please try again.');
+      if (err?.status === 'FETCH_ERROR') {
+        setError('Something went wrong while sending the OTP. Please check your network connection and try again.');
+      } else {
+        setError(err?.data?.error || 'Unable to send verification code at the moment. Please try again later.');
+      }
     }
   };
 

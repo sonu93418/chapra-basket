@@ -21,6 +21,7 @@ export default function OTPVerifyScreen() {
   const [localDevOtp, setLocalDevOtp] = useState(devOtp || '');
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [resendTimer, setResendTimer] = useState(RESEND_SECONDS);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -87,7 +88,7 @@ export default function OTPVerifyScreen() {
     try {
       const res = await verifyOtpCall({ phone: phone || '', code: enteredOtp }).unwrap();
       setSuccess(true);
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 800));
 
       dispatch(loginSuccess({
         user: res.data.user,
@@ -98,7 +99,18 @@ export default function OTPVerifyScreen() {
       router.replace('/(customer)' as any);
     } catch (err: any) {
       setIsLoading(false);
-      setError(err?.data?.error || 'Invalid OTP. Please try again.');
+      const msg = err?.data?.error || '';
+      if (err?.status === 'FETCH_ERROR') {
+        setError('Network connection lost. Please check your internet connection and try again.');
+      } else if (msg.includes('expired')) {
+        setError('The OTP has expired. Request a new OTP and try again.');
+      } else if (msg.includes('attempts')) {
+        setError('Too many attempts. Please wait a few minutes before trying again.');
+      } else if (msg.includes('Invalid OTP')) {
+        setError('The OTP you entered is incorrect. Please try again.');
+      } else {
+        setError(msg || 'Unable to verify your phone number. Please try again.');
+      }
       shake();
     }
   };
@@ -106,10 +118,10 @@ export default function OTPVerifyScreen() {
   const handleResend = async () => {
     if (resendTimer > 0) return;
     setError('');
-    setIsLoading(true);
+    setIsResending(true);
     try {
       const res = await sendOtpCall({ phone: phone || '' }).unwrap();
-      setIsLoading(false);
+      setIsResending(false);
       setResendTimer(RESEND_SECONDS);
       setOtp(Array(OTP_LENGTH).fill(''));
       inputRefs.current[0]?.focus();
@@ -117,8 +129,12 @@ export default function OTPVerifyScreen() {
         setLocalDevOtp(res.data.devOtp);
       }
     } catch (err: any) {
-      setIsLoading(false);
-      setError(err?.data?.error || 'Failed to resend OTP. Please try again.');
+      setIsResending(false);
+      if (err?.status === 'FETCH_ERROR') {
+        setError('Network connection lost. Please check your internet connection and try again.');
+      } else {
+        setError('OTP delivery failed. Please tap "Resend OTP" and try again.');
+      }
     }
   };
 
@@ -147,11 +163,11 @@ export default function OTPVerifyScreen() {
         </View>
 
         <Text style={styles.title}>
-          {success ? 'Verified' : 'OTP Verification'}
+          {success ? 'Verification Successful' : 'OTP Verification'}
         </Text>
         <Text style={styles.subtitle}>
           {success
-            ? 'Welcome to Chapra Basket!'
+            ? 'Phone number verified successfully.'
             : <>Enter the 6-digit code sent to{'\n'}<Text style={styles.phone}>{formatPhone(phone || '9876543210')}</Text></>
           }
         </Text>
@@ -198,17 +214,19 @@ export default function OTPVerifyScreen() {
 
         {/* Resend */}
         <View style={styles.resendRow}>
-          <Text style={styles.resendLabel}>Didn't receive the code? </Text>
-          <TouchableOpacity onPress={handleResend} disabled={resendTimer > 0} activeOpacity={0.8}>
-            {resendTimer > 0 ? (
-              <Text style={styles.resendTimer}>Resend in {resendTimer}s</Text>
-            ) : (
-              <View style={styles.resendBtn}>
-                <RefreshCw size={13} color={Colors.primary} strokeWidth={2.5} />
-                <Text style={styles.resendBtnText}>Resend OTP</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          {resendTimer > 0 ? (
+            <Text style={styles.resendTimer}>Didn't receive the OTP? Resend in {resendTimer}s</Text>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.resendLabel}>Didn't receive the OTP? Tap </Text>
+              <TouchableOpacity onPress={handleResend} disabled={isResending} activeOpacity={0.8}>
+                <View style={styles.resendBtn}>
+                  <RefreshCw size={13} color={Colors.primary} strokeWidth={2.5} />
+                  <Text style={styles.resendBtnText}>"Resend OTP"</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Development Helper hint */}
@@ -222,9 +240,9 @@ export default function OTPVerifyScreen() {
         ) : null}
 
         <Button
-          label={isLoading ? 'Verifying...' : success ? 'Taking you in...' : 'Verify & Continue'}
+          label={isResending ? 'Resending OTP...' : isLoading ? 'Verifying OTP...' : success ? 'Redirecting to your account...' : 'Verify & Continue'}
           onPress={() => verifyOtp()}
-          isLoading={isLoading}
+          isLoading={isLoading || isResending}
           disabled={filledCount < OTP_LENGTH || success}
           fullWidth
           size="lg"
