@@ -10,7 +10,7 @@ let mockUsers = [
     id: 'admin-1',
     phone: '+919999999999',
     name: 'Ops Manager',
-    email: 'ops@chaprabasket.com',
+    email: 'ops@blinkbox.com',
     role: 'admin',
     referralCode: 'OPS001',
     createdAt: new Date().toISOString()

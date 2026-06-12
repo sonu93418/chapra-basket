@@ -1,6 +1,6 @@
 import pg from 'pg';
 
-const connectionString = 'postgres://postgres:postgres@localhost:5432/chapra_basket';
+const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/blink_box';
 const pool = new pg.Pool({ connectionString });
 
 const sql = `

@@ -94,8 +94,8 @@ export default function SettingsScreen() {
             );
           })}
           <View style={styles.versionRow}>
-            <Text style={styles.versionText}>Chapra Basket v{APP_VERSION}</Text>
-            <Text style={styles.versionSub}>Made with love in Bihar</Text>
+            <Text style={styles.versionText}>Blink Box v{APP_VERSION}</Text>
+            <Text style={styles.versionSub}>Fast Delivery. Everyday Essentials.</Text>
           </View>
         </View>
 

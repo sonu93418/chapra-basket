@@ -373,7 +373,7 @@ export default function StoreDashboard() {
               </View>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Name</Text>
-                <Text style={styles.infoValue}>{activeStore?.name || 'Chapra Basket Store'}</Text>
+                <Text style={styles.infoValue}>{activeStore?.name || 'Blink Box Store'}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Store Type</Text>
@@ -385,7 +385,7 @@ export default function StoreDashboard() {
               </View>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Address</Text>
-                <Text style={styles.infoValue}>{activeStore?.address || 'Main Bazar, Chapra, Bihar'}</Text>
+                <Text style={styles.infoValue}>{activeStore?.address || 'Main Bazar, Blink Town, Bihar'}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Owner ID</Text>

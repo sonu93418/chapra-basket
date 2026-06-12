@@ -81,7 +81,7 @@ export const FRESH_PRODUCTS = PRODUCTS.filter(p => p.isFresh);
 export const COUPONS: Coupon[] = [
   { id: 'c1', code: 'WELCOME30', description: 'Get ₹30 off on your first order', discountType: 'flat', discountValue: 30, minOrderValue: 100, isApplied: false },
   { id: 'c2', code: 'FRESH20', description: 'Get 20% off on fresh vegetables & fruits', discountType: 'percent', discountValue: 20, maxDiscount: 60, minOrderValue: 150, isApplied: false },
-  { id: 'c3', code: 'CHAPRA50', description: 'Special offer — ₹50 off above ₹300', discountType: 'flat', discountValue: 50, minOrderValue: 300, isApplied: false },
+  { id: 'c3', code: 'BLINK50', description: 'Blink Special offer — ₹50 off above ₹300', discountType: 'flat', discountValue: 50, minOrderValue: 300, isApplied: false },
   { id: 'c4', code: 'FREEDEL', description: 'Free delivery on your next order', discountType: 'flat', discountValue: 25, minOrderValue: 199, isApplied: false },
 ];
 
@@ -130,7 +130,7 @@ export const MOCK_ORDERS: Order[] = [
 
 // ─── Mock Rider Orders ─────────────────────────────────────────
 export const RIDER_AVAILABLE_ORDERS: RiderOrder[] = [
-  { id: 'ro-1', orderNumber: '9928', storeName: 'Chapra Kitchen', storeIcon: 'restaurant', storeType: 'restaurant', distanceKm: 1.2, payout: 125, bonus: 20, hasBonus: true, itemImages: [PRODUCTS[28].images[0], PRODUCTS[24].images[0]], customerName: 'Priya Singh', customerAddress: 'Sadar Bazaar, Chapra' },
+  { id: 'ro-1', orderNumber: '9928', storeName: 'Blink Kitchen', storeIcon: 'restaurant', storeType: 'restaurant', distanceKm: 1.2, payout: 125, bonus: 20, hasBonus: true, itemImages: [PRODUCTS[28].images[0], PRODUCTS[24].images[0]], customerName: 'Priya Singh', customerAddress: 'Sadar Bazaar, Chapra' },
   { id: 'ro-2', orderNumber: '9931', storeName: 'Fresh Bazaar', storeIcon: 'shopping_basket', storeType: 'grocery', distanceKm: 2.8, payout: 85, hasBonus: false, expiresInSeconds: 240, itemImages: [PRODUCTS[6].images[0]], customerName: 'Ramesh Yadav', customerAddress: 'Station Road, Chapra' },
   { id: 'ro-3', orderNumber: '9933', storeName: 'MedPlus Pharmacy', storeIcon: 'medication', storeType: 'pharmacy', distanceKm: 0.9, payout: 65, hasBonus: false, itemImages: [PRODUCTS[21].images[0]], customerName: 'Anita Kumari', customerAddress: 'Kotwali Chowk, Chapra' },
 ];

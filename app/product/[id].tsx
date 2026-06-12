@@ -50,7 +50,7 @@ export default function ProductDetailScreen() {
 
   const handleShare = async () => {
     await Share.share({
-      message: `Check out ${product.name} on Chapra Basket! Only ₹${product.price}/${product.unit}`,
+      message: `Check out ${product.name} on Blink Box! Only ₹${product.price}/${product.unit}`,
     });
   };
 
@@ -158,7 +158,7 @@ export default function ProductDetailScreen() {
             <Zap size={24} color={Colors.successDark} />
             <View>
               <Text style={styles.deliveryTitle}>Express Delivery</Text>
-              <Text style={styles.deliverySub}>Delivered in 30 mins · Chapra</Text>
+              <Text style={styles.deliverySub}>Delivered in 30 mins · Express</Text>
             </View>
           </LinearGradient>
 
@@ -209,9 +209,9 @@ export default function ProductDetailScreen() {
           </View>
         )}
 
-        {/* Why Choose Chapra Basket */}
+        {/* Why Choose Blink Box */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Why Chapra Basket?</Text>
+          <Text style={styles.sectionTitle}>Why Blink Box?</Text>
           <View style={styles.featureList}>
             {[
               { Icon: CheckCircle, text: 'Quality checked products', color: Colors.success },

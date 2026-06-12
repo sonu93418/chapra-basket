@@ -1,4 +1,4 @@
-// Chapra Basket — Brand Color Tokens
+// Blink Box — Brand Color Tokens
 // Design System: "Hyperlocal Velocity" — Be Vietnam Pro + Orange #FF6B00
 
 export const Colors = {

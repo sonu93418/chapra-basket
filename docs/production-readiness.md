@@ -1,4 +1,4 @@
-# Chapra Basket Production Readiness
+# Blink Box Production Readiness
 
 ## UI and UX Report
 

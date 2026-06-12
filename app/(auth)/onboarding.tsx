@@ -1,34 +1,34 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity, Animated, Image } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, TextStyles, Radius, Spacing } from '../../src/theme';
-import { Zap, Package, Map, ArrowRight } from '../../src/components/ui/Icon';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors, Radius, Spacing } from '../../src/theme';
+import { ArrowRight } from '../../src/components/ui/Icon';
 
 const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    Icon: Zap,
-    titleEn: 'Delivered in 30 Minutes',
-    subtitle: 'Groceries, vegetables, medicines — everything at your doorstep. Super fast!',
-    gradient: ['#FF6B00', '#A04100'] as [string, string],
+    image: require('../../assets/onboarding1.png'),
+    headline: 'Everything You Need, Delivered Fast',
+    subtext: 'Order groceries, fruits, vegetables, medicines, and daily essentials in minutes.',
+    cta: 'Continue',
   },
   {
     id: '2',
-    Icon: Package,
-    titleEn: '10+ Categories, One App',
-    subtitle: 'Grocery, Fruits, Vegetables, Dairy, Medicines, Snacks and much more!',
-    gradient: ['#00B050', '#005321'] as [string, string],
+    image: require('../../assets/onboarding2.png'),
+    headline: 'Fresh Products from Trusted Local Stores',
+    subtext: 'Support local businesses while enjoying fast and reliable delivery.',
+    cta: 'Next',
   },
   {
     id: '3',
-    Icon: Map,
-    titleEn: 'Track Every Order Live',
-    subtitle: 'See your delivery partner on the map in real time. Know exactly when it arrives.',
-    gradient: ['#3B82F6', '#1D4ED8'] as [string, string],
+    image: require('../../assets/onboarding3.png'),
+    headline: 'Track Every Order in Real Time',
+    subtext: 'Follow your order from pickup to doorstep with accurate ETA updates.',
+    cta: 'Get Started',
   },
 ];
 
@@ -42,137 +42,206 @@ export default function OnboardingScreen() {
 
   const updateDots = (index: number) => {
     dotAnimations.forEach((anim, i) => {
-      Animated.timing(anim, { toValue: i === index ? 1 : 0, duration: 200, useNativeDriver: false }).start();
+      Animated.spring(anim, {
+        toValue: i === index ? 1 : 0,
+        tension: 40,
+        friction: 8,
+        useNativeDriver: false,
+      }).start();
     });
   };
 
-  const goNext = () => {
+  const handleNext = () => {
     if (currentIndex < SLIDES.length - 1) {
       const next = currentIndex + 1;
-      flatListRef.current?.scrollToIndex({ index: next });
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
       setCurrentIndex(next);
       updateDots(next);
     } else {
-      router.replace('/(auth)/login' as any);
+      router.replace('/(auth)/login');
     }
   };
 
-  const skip = () => router.replace('/(auth)/login' as any);
+  const handleSkip = () => {
+    router.replace('/(auth)/login');
+  };
+
+  const handleScroll = (event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / width);
+    if (index !== currentIndex) {
+      setCurrentIndex(index);
+      updateDots(index);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar style="dark" />
 
+      {/* Top Header - Skip Action */}
+      <View style={styles.header}>
+        {currentIndex < SLIDES.length - 1 ? (
+          <TouchableOpacity onPress={handleSkip} style={styles.skipBtn} activeOpacity={0.7}>
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ height: 40 }} />
+        )}
+      </View>
+
+      {/* Slide Carousel */}
       <FlatList
         ref={flatListRef}
         data={SLIDES}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        scrollEnabled={false}
+        onMomentumScrollEnd={handleScroll}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <LinearGradient colors={item.gradient} style={styles.slide}>
-            {/* Main Icon */}
-            <View style={styles.iconContainer}>
-              <item.Icon size={56} color={Colors.white} strokeWidth={2} />
+          <View style={styles.slide}>
+            {/* Visual Illustration Container */}
+            <View style={styles.imageContainer}>
+              <Image source={item.image} style={styles.image} resizeMode="contain" />
             </View>
 
-            {/* Text */}
+            {/* Typography content */}
             <View style={styles.textContainer}>
-              <Text style={styles.titleEn}>{item.titleEn}</Text>
-              <Text style={styles.subtitle}>{item.subtitle}</Text>
+              <Text style={styles.headline}>{item.headline}</Text>
+              <Text style={styles.subtext}>{item.subtext}</Text>
             </View>
-          </LinearGradient>
+          </View>
         )}
       />
 
-      {/* Bottom controls */}
-      <View style={styles.controls}>
-        {/* Dots */}
-        <View style={styles.dots}>
+      {/* Bottom Controls Bar */}
+      <View style={styles.controlsContainer}>
+        {/* Pagination Dots */}
+        <View style={styles.dotsRow}>
           {SLIDES.map((_, i) => (
             <Animated.View
               key={i}
               style={[
                 styles.dot,
                 {
-                  width: dotAnimations[i].interpolate({ inputRange: [0, 1], outputRange: [8, 24] }),
-                  opacity: dotAnimations[i].interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
-                  backgroundColor: Colors.white,
+                  width: dotAnimations[i].interpolate({ inputRange: [0, 1], outputRange: [8, 20] }),
+                  opacity: dotAnimations[i].interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] }),
+                  backgroundColor: i === currentIndex ? Colors.primary : Colors.border,
                 },
               ]}
             />
           ))}
         </View>
 
-        {/* Buttons */}
-        <View style={styles.btnRow}>
-          <TouchableOpacity onPress={skip} style={styles.skipBtn}>
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={goNext} style={styles.nextBtn}>
-            <Text style={styles.nextText}>
-              {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Next'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Action button */}
+        <TouchableOpacity onPress={handleNext} style={styles.ctaBtn} activeOpacity={0.85}>
+          <View style={styles.ctaButtonContent}>
+            <Text style={styles.ctaText}>{SLIDES[currentIndex].cta}</Text>
+            <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.5} />
+          </View>
+        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background, // Warm peach off-white (#FFF8F6)
+  },
+  header: {
+    height: 48,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  skipBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: Radius.xs,
+  },
+  skipText: {
+    fontFamily: 'BeVietnamPro-Bold',
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
   slide: {
     width,
-    height,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 48,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-
-  textContainer: { alignItems: 'center' },
-  titleEn: { fontFamily: 'BeVietnamPro-Bold', fontSize: 28, color: Colors.white, textAlign: 'center', marginBottom: 16 },
-  subtitle: { fontFamily: 'BeVietnamPro-Regular', fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', lineHeight: 24 },
-
-  controls: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 52,
-    paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
-    gap: 28,
-  },
-  dots: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  dot: { height: 8, borderRadius: 4 },
-
-  btnRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
-  skipBtn: { paddingVertical: 12, paddingHorizontal: 20 },
-  skipText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 15, color: 'rgba(255,255,255,0.7)' },
-
-  nextBtn: {
-    backgroundColor: Colors.white,
     paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: Radius.button,
-    minWidth: 160,
+  },
+  imageContainer: {
+    width: width * 0.82,
+    height: height * 0.38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 36,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  textContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginBottom: 72,
+  },
+  headline: {
+    fontFamily: 'BeVietnamPro-Bold',
+    fontSize: 24,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 14,
+    lineHeight: 32,
+    letterSpacing: -0.6,
+  },
+  subtext: {
+    fontFamily: 'BeVietnamPro-Regular',
+    fontSize: 15,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  controlsContainer: {
+    paddingBottom: 48,
+    paddingHorizontal: 28,
     alignItems: 'center',
   },
-  nextText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.primary },
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  dot: {
+    height: 8,
+    borderRadius: 4,
+  },
+  ctaBtn: {
+    width: '100%',
+    backgroundColor: Colors.primary, // Brand orange (#FF6B00)
+    borderRadius: Radius.button, // 14
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ctaButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+  },
+  ctaText: {
+    fontFamily: 'BeVietnamPro-Bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
 });

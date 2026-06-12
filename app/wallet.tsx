@@ -43,7 +43,7 @@ export default function WalletScreen() {
 
     try {
       await topupCall({ amount: finalAmt }).unwrap();
-      Alert.alert('Top-up Success', `₹${finalAmt} added successfully to your Chapra Basket Wallet!`);
+      Alert.alert('Top-up Success', `₹${finalAmt} added successfully to your Blink Box Wallet!`);
       setCustomAmount('');
     } catch (err: any) {
       Alert.alert('Top-up Failed', err?.data?.error || 'Failed to add money. Please try again.');
@@ -71,7 +71,7 @@ export default function WalletScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
           <ArrowLeft size={18} color={Colors.white} strokeWidth={2.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chapra Wallet</Text>
+        <Text style={styles.headerTitle}>Blink Wallet</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 

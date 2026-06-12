@@ -6,10 +6,10 @@ import { Colors, TextStyles, Radius, Spacing } from '../../src/theme';
 import { Star } from '../../src/components/ui/Icon';
 
 const HISTORY = [
-  { id: 'h1', orderNum: '9926', store: 'Chapra Kitchen', payout: 125, bonus: 20, time: '2:30 PM', date: 'Today', distance: '1.2 km', rating: 5 },
+  { id: 'h1', orderNum: '9926', store: 'Blink Kitchen', payout: 125, bonus: 20, time: '2:30 PM', date: 'Today', distance: '1.2 km', rating: 5 },
   { id: 'h2', orderNum: '9924', store: 'Fresh Bazaar', payout: 85, bonus: 0, time: '1:10 PM', date: 'Today', distance: '2.8 km', rating: 4 },
   { id: 'h3', orderNum: '9921', store: 'MedPlus Pharmacy', payout: 65, bonus: 0, time: '11:45 AM', date: 'Today', distance: '0.9 km', rating: 5 },
-  { id: 'h4', orderNum: '9918', store: 'Chapra Kitchen', payout: 140, bonus: 30, time: '10:20 AM', date: 'Today', distance: '1.5 km', rating: 5 },
+  { id: 'h4', orderNum: '9918', store: 'Blink Kitchen', payout: 140, bonus: 30, time: '10:20 AM', date: 'Today', distance: '1.5 km', rating: 5 },
 ];
 
 export default function RiderHistoryScreen() {

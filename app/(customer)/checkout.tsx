@@ -26,7 +26,7 @@ import { formatCurrencyFull } from '../../src/utils/format';
 const PAYMENT_METHODS = [
   { id: 'upi',     label: 'UPI / Google Pay',        Icon: Smartphone, desc: 'PhonePe · GPay · Paytm',  popular: false, color: '#4285F4' },
   { id: 'card',    label: 'Credit / Debit Card',      Icon: CreditCard, desc: 'Visa · Mastercard · RuPay', popular: false, color: '#7C3AED' },
-  { id: 'wallet',  label: 'Chapra Basket Wallet',     Icon: Wallet,     desc: 'Balance: ₹120',            popular: false, color: '#059669' },
+  { id: 'wallet',  label: 'Blink Box Wallet',     Icon: Wallet,     desc: 'Balance: ₹120',            popular: false, color: '#059669' },
   { id: 'cod',     label: 'Cash on Delivery',         Icon: Banknote,   desc: 'Pay when delivered',       popular: true,  color: Colors.primary },
 ] as const;
 

@@ -145,7 +145,7 @@ export default function AdminDashboard() {
             </View>
             <View>
               <Text style={styles.appBarTitle}>Operations Control</Text>
-              <Text style={styles.appBarSub}>Chapra Hub Dispatch Center</Text>
+              <Text style={styles.appBarSub}>Blink Box Hub Dispatch Center</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.exitBtn} onPress={() => router.replace('/(auth)/user-type')} activeOpacity={0.85}>

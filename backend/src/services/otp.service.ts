@@ -38,8 +38,9 @@ export async function sendOtp(
         throw new Error('Too many requests. Please wait before requesting another OTP.');
       }
     } catch (err: any) {
-      if (err.message.includes('Too many requests')) throw err;
-      console.warn('[DB OTP RateLimit] Failed to query, using memory check:', err.message);
+      const errMsg = err?.message || '';
+      if (errMsg.includes('Too many requests')) throw err;
+      console.warn('[DB OTP RateLimit] Failed to query, using memory check:', errMsg);
     }
   } else {
     // In-memory rate limiting check
@@ -103,7 +104,8 @@ export async function verifyOtp(
       const res = await pool.query(
         `SELECT * FROM otp_verifications 
          WHERE phone = $1 AND is_verified = false AND expires_at > NOW() 
-         ORDER BY created_at DESC LIMIT 1`
+         ORDER BY created_at DESC LIMIT 1`,
+        [phone]
       );
 
       if (res.rows.length === 0) {
@@ -143,14 +145,15 @@ export async function verifyOtp(
       );
       isVerified = true;
     } catch (err: any) {
+      const errMsg = err?.message || '';
       if (
-        err.message.includes('expired') ||
-        err.message.includes('attempts') ||
-        err.message.includes('Invalid OTP')
+        errMsg.includes('expired') ||
+        errMsg.includes('attempts') ||
+        errMsg.includes('Invalid OTP')
       ) {
         throw err;
       }
-      console.warn('[DB OTP Verify] Failed DB query, using memory check:', err.message);
+      console.warn('[DB OTP Verify] Failed DB query, using memory check:', errMsg);
     }
   }
 

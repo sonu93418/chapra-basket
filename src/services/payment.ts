@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Payment Service (Razorpay)
+ * Blink Box — Payment Service (Razorpay)
  * Production-ready payment integration
  */
 
@@ -44,11 +44,11 @@ export const initiatePayment = async (options: PaymentOptions): Promise<PaymentR
     }
 
     const razorpayOptions = {
-      description: options.description || `Chapra Basket Order #${options.orderId}`,
+      description: options.description || `Blink Box Order #${options.orderId}`,
       currency: 'INR',
       key: process.env.EXPO_PUBLIC_RAZORPAY_KEY || 'rzp_test_placeholder',
       amount: Math.round(options.amount * 100), // paise
-      name: 'Chapra Basket',
+      name: 'Blink Box',
       order_id: options.razorpayOrderId,
       prefill: {
         contact: options.userPhone,
@@ -96,7 +96,7 @@ export const PAYMENT_METHODS = [
   { id: 'upi', label: 'UPI', icon: 'qr-code', description: 'PhonePe, GPay, Paytm' },
   { id: 'card', label: 'Card', icon: 'credit-card', description: 'Credit & Debit Cards' },
   { id: 'netbanking', label: 'Net Banking', icon: 'building', description: 'All major banks' },
-  { id: 'wallet', label: 'CB Wallet', icon: 'wallet', description: 'Use your wallet balance' },
+  { id: 'wallet', label: 'Blink Wallet', icon: 'wallet', description: 'Use your wallet balance' },
   { id: 'cod', label: 'Cash on Delivery', icon: 'banknotes', description: 'Pay when delivered' },
 ] as const;
 

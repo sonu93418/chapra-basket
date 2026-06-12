@@ -81,7 +81,7 @@ export default function CartScreen() {
         {/* Delivery ETA */}
         <View style={styles.etaBanner}>
           <Zap size={13} color={Colors.successDark} strokeWidth={2.5} fill={Colors.successDark} />
-          <Text style={styles.etaText}>Delivering in ~30 mins · Chapra</Text>
+          <Text style={styles.etaText}>Delivering in ~30 mins · Express</Text>
         </View>
 
         {/* Cart Items */}

@@ -5,8 +5,8 @@
 
 // ─── App Config ──────────────────────────────────────────────────────────────
 export const APP_CONFIG = {
-  name: 'Chapra Basket',
-  tagline: 'Har Zaroorat, Aapke Ghar Tak',
+  name: 'Blink Box',
+  tagline: 'Fast Delivery. Everyday Essentials.',
   city: 'Chapra',
   state: 'Bihar',
   pincode: '841301',
@@ -17,7 +17,7 @@ export const APP_CONFIG = {
   currency: '₹',
   currencyCode: 'INR',
   supportPhone: '+91-9876543210',
-  supportEmail: 'support@chaprabasket.com',
+  supportEmail: 'support@blinkbox.com',
 };
 
 // ─── Socket Events ─────────────────────────────────────────────────────────
@@ -97,12 +97,12 @@ export const ENDPOINTS = {
 
 // ─── Storage Keys ──────────────────────────────────────────────────────────
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: '@cb_auth_token',
-  REFRESH_TOKEN: '@cb_refresh_token',
-  USER_DATA: '@cb_user_data',
-  CART: '@cb_cart',
-  RECENT_SEARCHES: '@cb_recent_searches',
-  ONBOARDING_DONE: '@cb_onboarding_done',
+  AUTH_TOKEN: '@bb_auth_token',
+  REFRESH_TOKEN: '@bb_refresh_token',
+  USER_DATA: '@bb_user_data',
+  CART: '@bb_cart',
+  RECENT_SEARCHES: '@bb_recent_searches',
+  ONBOARDING_DONE: '@bb_onboarding_done',
 } as const;
 
 // ─── Order Statuses ────────────────────────────────────────────────────────

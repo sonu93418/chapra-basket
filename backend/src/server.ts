@@ -9,5 +9,5 @@ const server = http.createServer(app);
 attachRealtimeServer(server);
 
 server.listen(env.port, () => {
-  console.log(`Chapra Basket API running on http://localhost:${env.port}`);
+  console.log(`Blink Box API running on http://localhost:${env.port}`);
 });

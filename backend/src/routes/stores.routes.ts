@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 export const storesRouter = Router();
 
 let mockStores = [
-  { id: 'store-1', name: 'Fresh Bazaar Chapra', type: 'grocery', etaMinutes: 30, isOpen: true },
+  { id: 'store-1', name: 'Fresh Bazaar Store', type: 'grocery', etaMinutes: 30, isOpen: true },
   { id: 'store-2', name: 'Sadar Fresh Vegetables', type: 'vegetables', etaMinutes: 25, isOpen: true },
 ];
 

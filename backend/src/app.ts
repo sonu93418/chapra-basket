@@ -15,7 +15,7 @@ export function createApp() {
   app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
   app.get('/health', (_req, res) => {
-    res.json({ ok: true, service: 'chapra-basket-api', time: new Date().toISOString() });
+    res.json({ ok: true, service: 'blink-box-api', time: new Date().toISOString() });
   });
 
   app.use('/api/v1', apiRouter);

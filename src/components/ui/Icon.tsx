@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Unified SVG Icon Component
+ * Blink Box — Unified SVG Icon Component
  * Uses lucide-react-native for all icons (no PNG, no emoji)
  */
 import React from 'react';
@@ -130,4 +130,6 @@ export {
   ArrowDownLeft,
   Briefcase,
   Edit,
+  Coffee,
+  Sparkles,
 } from 'lucide-react-native';

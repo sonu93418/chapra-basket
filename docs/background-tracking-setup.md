@@ -42,10 +42,10 @@ Add the following keys to your `Info.plist`:
 
 ```xml
 <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-<string>Chapra Basket requires background location to track deliveries and update live customer ETAs.</string>
+<string>Blink Box requires background location to track deliveries and update live customer ETAs.</string>
 
 <key>NSLocationWhenInUseUsageDescription</key>
-<string>Chapra Basket requires location access to navigate to the customer store.</string>
+<string>Blink Box requires location access to navigate to the customer store.</string>
 
 <key>UIBackgroundModes</key>
 <array>
@@ -95,7 +95,7 @@ BackgroundGeolocation.ready({
   // Android Specific Notification UI
   notification: {
     title: "Live Delivery Active",
-    text: "Chapra Basket is updating your location for live tracking.",
+    text: "Blink Box is updating your location for live tracking.",
     color: "#E05A1F" // Brand color
   }
 }).then((state) => {

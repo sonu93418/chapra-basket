@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Currency & Formatting Utilities
+ * Blink Box — Currency & Formatting Utilities
  */
 
 export const formatCurrency = (amount: number): string => {

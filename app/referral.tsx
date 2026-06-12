@@ -19,8 +19,8 @@ export default function ReferralScreen() {
 
   const handleShare = async () => {
     await Share.share({
-      message: `Join Chapra Basket — Your Daily Needs, Delivered Instantly!\n\nUse my referral code *${REFERRAL_CODE}* and get ₹30 off your first order!\n\nDownload now: chaprabasket.app/join`,
-      title: 'Join Chapra Basket',
+      message: `Join Blink Box — Fast Delivery. Everyday Essentials.\n\nUse my referral code *${REFERRAL_CODE}* and get ₹30 off your first order!\n\nDownload now: blinkbox.app/join`,
+      title: 'Join Blink Box',
     });
   };
 
@@ -49,7 +49,7 @@ export default function ReferralScreen() {
           <Gift size={48} color={Colors.white} style={{ marginBottom: 12 }} />
           <Text style={styles.heroTitle}>Earn ₹50 Per Referral!</Text>
           <Text style={styles.heroSub}>
-            Invite friends to Chapra Basket. You earn ₹50 when they place their first order.
+            Invite friends to Blink Box. You earn ₹50 when they place their first order.
           </Text>
           <Text style={styles.totalEarned}>₹{totalEarned} earned so far · {REFERRED_FRIENDS.length} friends joined</Text>
         </LinearGradient>
@@ -77,7 +77,7 @@ export default function ReferralScreen() {
           <Text style={styles.sectionTitle}>How It Works</Text>
           {[
             { Icon: Share2, title: 'Share your code', sub: 'Share your unique referral link with friends' },
-            { Icon: Smartphone, title: 'Friend joins', sub: 'Your friend downloads and registers on Chapra Basket' },
+            { Icon: Smartphone, title: 'Friend joins', sub: 'Your friend downloads and registers on Blink Box' },
             { Icon: ShoppingCart, title: 'First order placed', sub: 'Friend places their first order using your code' },
             { Icon: Banknote, title: 'You earn ₹50', sub: 'Wallet credit added instantly!' },
           ].map((step, i) => {

@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Store Operations API (RTK Query)
+ * Blink Box — Store Operations API (RTK Query)
  */
 import { baseApi } from './baseApi';
 import { Product } from '../types';

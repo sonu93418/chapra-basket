@@ -83,7 +83,7 @@ export default function AddressesScreen() {
         landmark,
         pincode,
         isDefault,
-        city: 'Chapra',
+        city: 'Blink Town',
         state: 'Bihar',
         lat: 25.774,
         lng: 84.7374,
@@ -258,7 +258,7 @@ export default function AddressesScreen() {
               <Text style={styles.formLabel}>Landmark (Optional)</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="e.g. Near SBI Bank, chapra"
+                placeholder="e.g. Near SBI Bank"
                 placeholderTextColor={Colors.textPlaceholder}
                 value={landmark}
                 onChangeText={setLandmark}

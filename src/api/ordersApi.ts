@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Orders API (RTK Query)
+ * Blink Box — Orders API (RTK Query)
  */
 import { baseApi } from './baseApi';
 import { ENDPOINTS } from '../constants';

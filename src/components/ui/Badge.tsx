@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Badge Component
+ * Blink Box — Badge Component
  * Used for cart count, notification dots, order status
  */
 import React from 'react';

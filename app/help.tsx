@@ -9,7 +9,7 @@ import { ArrowLeft, Headphones, Phone, MessageCircle, ChevronUp, ChevronDown, Ch
 const FAQ = [
   {
     q: 'How long does delivery take?',
-    a: 'We deliver within 30 minutes in most areas of Chapra. Express delivery is available from 8 AM to 10 PM.',
+    a: 'We deliver within 30 minutes in most areas. Express delivery is available from 8 AM to 10 PM.',
   },
   {
     q: 'Can I change or cancel my order?',
@@ -21,7 +21,7 @@ const FAQ = [
   },
   {
     q: 'How do I use my wallet balance?',
-    a: 'Select "Chapra Basket Wallet" as payment method during checkout. Balance is deducted automatically.',
+    a: 'Select "Blink Box Wallet" as payment method during checkout. Balance is deducted automatically.',
   },
   {
     q: 'What if I receive a wrong or damaged product?',
@@ -32,7 +32,7 @@ const FAQ = [
 const CONTACT = [
   { IconComponent: Phone, label: 'Call Support', sub: '+91 7654 321 098', action: 'Call' },
   { IconComponent: MessageCircle, label: 'WhatsApp Chat', sub: 'Chat with us instantly', action: 'Chat' },
-  { IconComponent: Headphones, label: 'Email Us', sub: 'support@chaprabasket.com', action: 'Email' },
+  { IconComponent: Headphones, label: 'Email Us', sub: 'support@blinkbox.com', action: 'Email' },
 ];
 
 export default function HelpScreen() {

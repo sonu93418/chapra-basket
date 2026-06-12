@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Admin Operations API (RTK Query)
+ * Blink Box — Admin Operations API (RTK Query)
  */
 import { baseApi } from './baseApi';
 import { User, UserRole } from '../types';

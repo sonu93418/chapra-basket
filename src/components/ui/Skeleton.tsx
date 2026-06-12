@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — Skeleton Loading Component
+ * Blink Box — Skeleton Loading Component
  * Used for all loading states instead of spinners
  */
 import React, { useEffect, useRef } from 'react';

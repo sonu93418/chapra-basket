@@ -1,8 +1,8 @@
 {
-  "name": "chapra-basket",
+  "name": "blink-box",
   "version": "1.0.0",
   "main": "expo-router/entry",
-  "description": "Chapra Basket - Har Zaroorat, Aapke Ghar Tak",
+  "description": "Blink Box - Fast Delivery. Everyday Essentials.",
   "dependencies": {
     "@expo-google-fonts/be-vietnam-pro": "^0.4.1",
     "@gorhom/bottom-sheet": "^5.1.1",

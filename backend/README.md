@@ -1,6 +1,6 @@
-# Chapra Basket Backend
+# Blink Box Backend
 
-Production-oriented API starter for Chapra Basket quick commerce.
+Production-oriented API starter for Blink Box quick commerce.
 
 ## Run locally
 

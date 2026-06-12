@@ -17,7 +17,7 @@ export async function logOtpOutcome(phone: string, provider: string, messageId: 
 
 export async function sendSmsOtp(phone: string, code: string): Promise<{ success: boolean; provider: string; messageId?: string; error?: string }> {
   // SMS text using retrieval tag for auto-OTP reads on Android
-  const message = `<#> Your Chapra Basket verification code is: ${code}. abcd1234XYZ`;
+  const message = `<#> Your Blink Box verification code is: ${code}. abcd1234XYZ`;
   const provider = env.otpProvider || 'mock';
 
   // 1. Fast2SMS India Integration

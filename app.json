@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Chapra Basket",
-    "slug": "chapra-basket",
+    "name": "Blink Box",
+    "slug": "blink-box",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "chaprabasket",
+    "scheme": "blinkbox",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.chaprabasket.app"
+      "bundleIdentifier": "com.blinkbox.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "backgroundColor": "#FF6B00"
       },
-      "package": "com.chaprabasket.app",
+      "package": "com.blinkbox.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -49,7 +49,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Chapra Basket needs your location to deliver to your address."
+          "locationAlwaysAndWhenInUsePermission": "Blink Box needs your location to deliver to your address."
         }
       ],
       "expo-image"

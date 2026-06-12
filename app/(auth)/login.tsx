@@ -33,11 +33,7 @@ export default function LoginScreen() {
       });
     } catch (err: any) {
       setIsLoading(false);
-      if (err?.status === 'FETCH_ERROR') {
-        setError('Something went wrong while sending the OTP. Please check your network connection and try again.');
-      } else {
-        setError(err?.data?.error || 'Unable to send verification code at the moment. Please try again later.');
-      }
+      setError('Failed to send OTP. Please try again.');
     }
   };
 
@@ -59,8 +55,8 @@ export default function LoginScreen() {
           <View style={styles.logoCircle}>
             <ShoppingBag size={36} color={Colors.primary} strokeWidth={2} />
           </View>
-          <Text style={styles.brand}>Chapra Basket</Text>
-          <Text style={styles.tagline}>Your daily needs, delivered at your door</Text>
+          <Text style={styles.brand}>Blink Box</Text>
+          <Text style={styles.tagline}>Fast Delivery. Everyday Essentials.</Text>
         </View>
 
         {/* Hero Text */}
@@ -153,7 +149,7 @@ export default function LoginScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.riderTitle}>Delivery Partner?</Text>
-            <Text style={styles.riderSub}>Earn up to ₹800/day in Chapra</Text>
+            <Text style={styles.riderSub}>Earn up to ₹800/day as a delivery partner</Text>
           </View>
           <ChevronRight size={18} color={Colors.textMuted} strokeWidth={2} />
         </TouchableOpacity>

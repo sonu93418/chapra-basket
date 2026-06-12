@@ -46,7 +46,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const PAYMENT_LABELS: Record<string, string> = {
   upi: 'UPI', card: 'Card', cod: 'Cash on Delivery',
-  wallet: 'Chapra Wallet', netbanking: 'Net Banking',
+  wallet: 'Blink Wallet', netbanking: 'Net Banking',
 };
 
 export default function OrderDetailScreen() {

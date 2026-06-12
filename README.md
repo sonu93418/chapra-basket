@@ -1,8 +1,8 @@
-# 🛒 Chapra Basket
+# 🛒 Blink Box
 
-**Har Zaroorat, Aapke Ghar Tak** — A hyperlocal grocery & essentials delivery app built for Chapra, Bihar.
+**Fast Delivery. Everyday Essentials.** — A hyperlocal grocery & essentials delivery app built for speed.
 
-Chapra Basket connects customers with instant delivery of groceries, fresh produce, dairy, medicines, snacks and more — right to their doorstep. The app also includes a full **Rider Dashboard** for delivery partners.
+Blink Box connects customers with instant delivery of groceries, fresh produce, dairy, medicines, snacks and more — right to their doorstep. The app also includes a full **Rider Dashboard** for delivery partners.
 
 ---
 
@@ -54,7 +54,7 @@ Chapra Basket connects customers with instant delivery of groceries, fresh produ
 ## 📁 Project Structure
 
 ```
-chapra-basket/
+blink-box/
 ├── app/                        # Expo Router screens
 │   ├── _layout.tsx             # Root layout (Provider, fonts, splash)
 │   ├── index.tsx               # Entry redirect
@@ -112,8 +112,8 @@ chapra-basket/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/sonu93418/chapra-basket.git
-cd chapra-basket
+git clone https://github.com/sonu93418/blink-box.git
+cd blink-box
 
 # 2. Install dependencies
 npm install
@@ -206,4 +206,4 @@ MIT License — see [LICENSE](./LICENSE) for details.
 
 ---
 
-*Built with ❤️ for Chapra, Bihar 🇮🇳*
+*Built with ❤️ for fast delivery ⚡*

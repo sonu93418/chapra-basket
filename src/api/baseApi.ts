@@ -1,5 +1,5 @@
 /**
- * Chapra Basket — RTK Query Base API
+ * Blink Box — RTK Query Base API
  * All API calls go through this single base with auth headers
  */
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
