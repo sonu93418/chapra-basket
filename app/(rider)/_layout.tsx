@@ -1,7 +1,8 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Radius } from '../../src/theme';
-import { House, ReceiptText, Wallet, User } from '../../src/components/ui/Icon';
+import { useAppSelector } from '../../src/hooks/useAppDispatch';
+import { House, Package, TrendingUp, Wallet, User } from '../../src/components/ui/Icon';
 import type { LucideIcon } from 'lucide-react-native';
 
 interface RiderTabIconProps {
@@ -24,6 +25,22 @@ function RiderTabIcon({ Icon, label, focused }: RiderTabIconProps) {
 }
 
 export default function RiderLayout() {
+  const { isAuthenticated, user, isLoading } = useAppSelector(s => s.auth);
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  if (user.role !== 'rider') {
+    if (user.role === 'customer') return <Redirect href="/(customer)" />;
+    if (user.role === 'store_owner') return <Redirect href="/(store)" />;
+    if (user.role === 'admin') return <Redirect href="/(admin)" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -35,13 +52,19 @@ export default function RiderLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ focused }) => <RiderTabIcon Icon={House} label="Home" focused={focused} />,
+          tabBarIcon: ({ focused }) => <RiderTabIcon Icon={House} label="Dashboard" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="history"
+        name="orders"
         options={{
-          tabBarIcon: ({ focused }) => <RiderTabIcon Icon={ReceiptText} label="History" focused={focused} />,
+          tabBarIcon: ({ focused }) => <RiderTabIcon Icon={Package} label="Orders" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="earnings"
+        options={{
+          tabBarIcon: ({ focused }) => <RiderTabIcon Icon={TrendingUp} label="Earnings" focused={focused} />,
         }}
       />
       <Tabs.Screen

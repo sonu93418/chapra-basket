@@ -53,14 +53,18 @@ export async function listOrders(customerId: string): Promise<Order[]> {
           cancelledAt: row.cancelled_at || undefined,
           address: {
             id: row.address_id,
-            label: row.addr_label || 'Home',
-            fullAddress: row.full_address || 'Sadar Bazaar, Chapra',
-            landmark: row.landmark,
+            userId: row.customer_id,
+            fullName: row.customer_name || 'Customer',
+            phoneNumber: row.customer_phone || '9876543210',
+            addressLine1: row.address_line_1 || 'Sadar Bazaar',
+            addressLine2: row.address_line_2 || undefined,
+            landmark: row.landmark || undefined,
             city: row.city || 'Chapra',
             state: row.state || 'Bihar',
-            pincode: row.pincode || '841301',
-            lat: 25.774,
-            lng: 84.7374,
+            postalCode: row.postal_code || '841301',
+            country: 'India',
+            latitude: Number(row.latitude || 25.774),
+            longitude: Number(row.longitude || 84.7374),
             isDefault: false,
           },
           items,
@@ -120,14 +124,18 @@ export async function getOrder(id: string): Promise<Order | null> {
           cancelledAt: row.cancelled_at || undefined,
           address: {
             id: row.address_id,
-            label: row.addr_label || 'Home',
-            fullAddress: row.full_address || 'Sadar Bazaar, Chapra',
-            landmark: row.landmark,
+            userId: row.customer_id,
+            fullName: row.customer_name || 'Customer',
+            phoneNumber: row.customer_phone || '9876543210',
+            addressLine1: row.address_line_1 || 'Sadar Bazaar',
+            addressLine2: row.address_line_2 || undefined,
+            landmark: row.landmark || undefined,
             city: row.city || 'Chapra',
             state: row.state || 'Bihar',
-            pincode: row.pincode || '841301',
-            lat: 25.774,
-            lng: 84.7374,
+            postalCode: row.postal_code || '841301',
+            country: 'India',
+            latitude: Number(row.latitude || 25.774),
+            longitude: Number(row.longitude || 84.7374),
             isDefault: false,
           },
           items,
@@ -245,14 +253,18 @@ export async function createOrder(params: {
           const r = fullAddrRes.rows[0];
           addressDetails = {
             id: r.id,
-            label: r.label,
-            fullAddress: r.full_address,
-            landmark: r.landmark,
-            lat: Number(r.lat),
-            lng: Number(r.lng),
+            userId: r.user_id,
+            fullName: r.full_name,
+            phoneNumber: r.phone_number,
+            addressLine1: r.address_line_1,
+            addressLine2: r.address_line_2 || undefined,
+            landmark: r.landmark || undefined,
             city: r.city,
             state: r.state,
-            pincode: r.pincode,
+            postalCode: r.postal_code,
+            country: r.country,
+            latitude: Number(r.latitude),
+            longitude: Number(r.longitude),
             isDefault: r.is_default,
           };
         }
@@ -402,4 +414,30 @@ async function checkAndTriggerReferralReward(customerId: string) {
   } catch (err: any) {
     console.error('[Referral] Reward trigger failed:', err.message);
   }
+}
+
+export async function updateOrderPaymentStatus(
+  orderId: string,
+  paymentStatus: 'pending' | 'success' | 'failed'
+): Promise<Order | null> {
+  if (pool) {
+    try {
+      const res = await pool.query(
+        'UPDATE orders SET payment_status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+        [paymentStatus, orderId]
+      );
+      if (res.rows.length > 0) {
+        return getOrder(orderId);
+      }
+    } catch (err: any) {
+      console.warn('[DB Orders] updateOrderPaymentStatus failed:', err.message);
+    }
+  }
+
+  const order = orders.find(o => o.id === orderId);
+  if (order) {
+    order.paymentStatus = paymentStatus;
+    return order;
+  }
+  return null;
 }

@@ -6,6 +6,21 @@ import ordersReducer from '../features/orders/ordersSlice';
 import riderReducer from '../features/rider/riderSlice';
 import wishlistReducer from '../features/wishlist/wishlistSlice';
 import { baseApi } from '../api/baseApi';
+import { saveSession, clearSession } from '../utils/storage';
+
+const persistMiddleware = (storeApi: any) => (next: any) => (action: any) => {
+  const result = next(action);
+  if (action.type === 'auth/loginSuccess') {
+    saveSession(action.payload).catch(err => {
+      console.warn('[Storage] Middleware failed to save session:', err);
+    });
+  } else if (action.type === 'auth/logout') {
+    clearSession().catch(err => {
+      console.warn('[Storage] Middleware failed to clear session:', err);
+    });
+  }
+  return result;
+};
 
 export const store = configureStore({
   reducer: {
@@ -22,7 +37,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [],
       },
-    }).concat(baseApi.middleware),
+    }).concat(baseApi.middleware, persistMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

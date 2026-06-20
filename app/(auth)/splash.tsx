@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, Animated, Dimensions, ActivityIndicator, Image 
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '../../src/theme';
+import { useAppSelector } from '../../src/hooks/useAppDispatch';
 
 const { width } = Dimensions.get('window');
 
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.96)).current;
+  const { isAuthenticated, user } = useAppSelector(s => s.auth);
 
   useEffect(() => {
     // Smooth fade and scale animations
@@ -26,13 +28,26 @@ export default function SplashScreen() {
       }),
     ]).start();
 
-    // Transition to onboarding after 2.8 seconds
+    // Transition after 2.8 seconds
     const timer = setTimeout(() => {
-      router.replace('/(auth)/onboarding');
+      if (isAuthenticated && user) {
+        const role = user.role;
+        if (role === 'rider') {
+          router.replace('/(rider)' as any);
+        } else if (role === 'store_owner') {
+          router.replace('/(store)' as any);
+        } else if (role === 'admin') {
+          router.replace('/(admin)' as any);
+        } else {
+          router.replace('/(customer)' as any);
+        }
+      } else {
+        router.replace('/(auth)/onboarding');
+      }
     }, 2800);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAuthenticated, user]);
 
   return (
     <View style={styles.container}>

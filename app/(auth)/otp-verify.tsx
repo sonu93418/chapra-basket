@@ -96,7 +96,16 @@ export default function OTPVerifyScreen() {
       }));
 
       setIsLoading(false);
-      router.replace('/(customer)' as any);
+      const role = res.data.user.role;
+      if (role === 'rider') {
+        router.replace('/(rider)' as any);
+      } else if (role === 'store_owner') {
+        router.replace('/(store)' as any);
+      } else if (role === 'admin') {
+        router.replace('/(admin)' as any);
+      } else {
+        router.replace('/(customer)' as any);
+      }
     } catch (err: any) {
       setIsLoading(false);
       const msg = err?.data?.error || '';

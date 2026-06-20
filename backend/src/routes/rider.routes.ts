@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { riderLocations } from '../data/demoStore.js';
 import { emitRiderLocation } from '../realtime/events.js';
+import { requireRole } from '../middleware/auth.js';
 
 export const riderRouter = Router();
 
-riderRouter.get('/orders/available', (_req, res) => {
+riderRouter.get('/orders/available', requireRole(['rider', 'admin']), (_req, res) => {
   res.json({
     success: true,
     data: [
@@ -13,7 +14,7 @@ riderRouter.get('/orders/available', (_req, res) => {
   });
 });
 
-riderRouter.post('/location', (req, res) => {
+riderRouter.post('/location', requireRole(['rider', 'admin']), (req, res) => {
   const location = {
     orderId: req.body.orderId,
     riderId: req.body.riderId ?? 'rider-1',

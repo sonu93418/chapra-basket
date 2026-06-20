@@ -1,56 +1,64 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Modal, TextInput, Switch, ActivityIndicator, Alert
+  Modal, TextInput, Switch, ActivityIndicator, Alert, ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../src/theme';
 import { Address } from '../src/types';
+import * as Location from 'expo-location';
 import {
   useGetAddressesQuery,
   useAddAddressMutation,
   useUpdateAddressMutation,
+  useSetDefaultAddressMutation,
   useDeleteAddressMutation,
 } from '../src/api/addressesApi';
 import {
   ArrowLeft, Home, Briefcase, MapPin, Edit,
-  Star, Trash2, Plus, Check, X
+  Star, Trash2, Plus, Check, X, Navigation
 } from '../src/components/ui/Icon';
-
-const getLabelIcon = (label: string) => {
-  switch (label.toLowerCase()) {
-    case 'home':
-      return <Home size={18} color={Colors.primary} strokeWidth={2.5} />;
-    case 'work':
-      return <Briefcase size={18} color={Colors.primary} strokeWidth={2.5} />;
-    default:
-      return <MapPin size={18} color={Colors.primary} strokeWidth={2.5} />;
-  }
-};
 
 export default function AddressesScreen() {
   const { data: addresses = [], isLoading, error } = useGetAddressesQuery();
   const [addAddressCall] = useAddAddressMutation();
   const [updateAddressCall] = useUpdateAddressMutation();
+  const [setDefaultAddressCall] = useSetDefaultAddressMutation();
   const [deleteAddressCall] = useDeleteAddressMutation();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Address Form States
-  const [label, setLabel] = useState<'Home' | 'Work' | 'Other'>('Home');
-  const [fullAddress, setFullAddress] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
   const [landmark, setLandmark] = useState('');
-  const [pincode, setPincode] = useState('');
+  const [city, setCity] = useState('Chapra');
+  const [state, setState] = useState('Bihar');
+  const [postalCode, setPostalCode] = useState('');
+  const [country, setCountry] = useState('India');
+  const [latitude, setLatitude] = useState(25.774);
+  const [longitude, setLongitude] = useState(84.7374);
   const [isDefault, setIsDefault] = useState(false);
 
+  const [detectingLocation, setDetectingLocation] = useState(false);
+
   const resetForm = () => {
-    setLabel('Home');
-    setFullAddress('');
+    setFullName('');
+    setPhoneNumber('');
+    setAddressLine1('');
+    setAddressLine2('');
     setLandmark('');
-    setPincode('');
+    setCity('Chapra');
+    setState('Bihar');
+    setPostalCode('');
+    setCountry('India');
+    setLatitude(25.774);
+    setLongitude(84.7374);
     setIsDefault(false);
     setEditingId(null);
   };
@@ -61,32 +69,84 @@ export default function AddressesScreen() {
   };
 
   const handleOpenEdit = (addr: Address) => {
-    setLabel(addr.label);
-    setFullAddress(addr.fullAddress);
+    setFullName(addr.fullName);
+    setPhoneNumber(addr.phoneNumber);
+    setAddressLine1(addr.addressLine1);
+    setAddressLine2(addr.addressLine2 || '');
     setLandmark(addr.landmark || '');
-    setPincode(addr.pincode);
+    setCity(addr.city);
+    setState(addr.state);
+    setPostalCode(addr.postalCode);
+    setCountry(addr.country || 'India');
+    setLatitude(addr.latitude);
+    setLongitude(addr.longitude);
     setIsDefault(addr.isDefault);
     setEditingId(addr.id);
     setModalVisible(true);
   };
 
+  const detectLocation = async () => {
+    setDetectingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Please enable location services in settings to detect your coordinates.');
+        setDetectingLocation(false);
+        return;
+      }
+
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const { latitude: lat, longitude: lng } = pos.coords;
+      setLatitude(lat);
+      setLongitude(lng);
+
+      const geocode = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      if (geocode.length > 0) {
+        const addressObj = geocode[0];
+        setCity(addressObj.city || addressObj.subregion || 'Chapra');
+        setState(addressObj.region || 'Bihar');
+        setPostalCode(addressObj.postalCode || '841301');
+        
+        const streetDetails = [
+          addressObj.name,
+          addressObj.street,
+          addressObj.district,
+        ].filter(Boolean).join(', ');
+        
+        setAddressLine1(streetDetails || 'Detected Street Location');
+        setAddressLine2(addressObj.subregion || '');
+      } else {
+        Alert.alert('Geocoding Failed', 'We couldn\'t fetch details for this location. Please enter details manually.');
+      }
+    } catch (err: any) {
+      Alert.alert('Error Detecting Location', err.message || 'Failed to capture GPS details.');
+    } finally {
+      setDetectingLocation(false);
+    }
+  };
+
   const handleSave = async () => {
-    if (!fullAddress.trim() || !pincode.trim()) {
-      Alert.alert('Validation Error', 'Please fill in address and pincode');
+    if (!fullName.trim() || !phoneNumber.trim() || !addressLine1.trim() || !postalCode.trim()) {
+      Alert.alert('Validation Error', 'Please complete all required fields (Name, Phone, Address Line 1, Pincode).');
       return;
     }
 
     try {
       const payload = {
-        label,
-        fullAddress,
-        landmark,
-        pincode,
+        fullName,
+        phoneNumber,
+        addressLine1,
+        addressLine2: addressLine2 || undefined,
+        landmark: landmark || undefined,
+        city,
+        state,
+        postalCode,
+        country,
+        latitude,
+        longitude,
         isDefault,
-        city: 'Blink Town',
-        state: 'Bihar',
-        lat: 25.774,
-        lng: 84.7374,
       };
 
       if (editingId) {
@@ -97,14 +157,14 @@ export default function AddressesScreen() {
       setModalVisible(false);
       resetForm();
     } catch (err: any) {
-      Alert.alert('Error', err?.data?.error || 'Failed to save address');
+      Alert.alert('Error Saving', err?.data?.error || 'Failed to save address details.');
     }
   };
 
   const handleDelete = (id: string) => {
     Alert.alert(
       'Delete Address',
-      'Are you sure you want to delete this address?',
+      'Are you sure you want to remove this address?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -114,7 +174,7 @@ export default function AddressesScreen() {
             try {
               await deleteAddressCall(id).unwrap();
             } catch (err: any) {
-              Alert.alert('Error', err?.data?.error || 'Failed to delete address');
+              Alert.alert('Error', err?.data?.error || 'Failed to delete address.');
             }
           },
         },
@@ -124,9 +184,9 @@ export default function AddressesScreen() {
 
   const handleSetDefault = async (addr: Address) => {
     try {
-      await updateAddressCall({ id: addr.id, isDefault: true }).unwrap();
+      await setDefaultAddressCall(addr.id).unwrap();
     } catch (err: any) {
-      Alert.alert('Error', err?.data?.error || 'Failed to update default address');
+      Alert.alert('Error', err?.data?.error || 'Failed to update default address.');
     }
   };
 
@@ -139,7 +199,7 @@ export default function AddressesScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
           <ArrowLeft size={22} color={Colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
-        <Text style={styles.title}>My Addresses</Text>
+        <Text style={styles.title}>My Delivery Addresses</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -168,18 +228,19 @@ export default function AddressesScreen() {
               
               <View style={styles.cardHeader}>
                 <View style={styles.iconBox}>
-                  {getLabelIcon(item.label)}
+                  <MapPin size={18} color={Colors.primary} strokeWidth={2} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>{item.label}</Text>
-                  <Text style={styles.addressText}>{item.fullAddress}</Text>
+                  <Text style={styles.label}>{item.fullName} · {item.phoneNumber}</Text>
+                  <Text style={styles.addressText}>{item.addressLine1}</Text>
+                  {item.addressLine2 ? <Text style={styles.addressText}>{item.addressLine2}</Text> : null}
                   {item.landmark && (
                     <Text style={styles.landmark}>
                       <Text style={{ fontFamily: 'BeVietnamPro-SemiBold' }}>Landmark: </Text>
                       {item.landmark}
                     </Text>
                   )}
-                  <Text style={styles.city}>{item.city}, {item.state} — {item.pincode}</Text>
+                  <Text style={styles.city}>{item.city}, {item.state} — {item.postalCode}</Text>
                 </View>
               </View>
 
@@ -214,7 +275,7 @@ export default function AddressesScreen() {
             <View style={styles.empty}>
               <MapPin size={48} color={Colors.textMuted} />
               <Text style={styles.emptyTitle}>No saved addresses</Text>
-              <Text style={styles.emptySub}>Please add a delivery address to order.</Text>
+              <Text style={styles.emptySub}>Please add a delivery address to place orders.</Text>
             </View>
           }
         />
@@ -231,28 +292,67 @@ export default function AddressesScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.form}>
-              <Text style={styles.formLabel}>Address Label</Text>
-              <View style={styles.labelRow}>
-                {(['Home', 'Work', 'Other'] as const).map(l => (
-                  <TouchableOpacity
-                    key={l}
-                    style={[styles.labelChip, label === l && styles.labelChipActive]}
-                    onPress={() => setLabel(l)}
-                  >
-                    <Text style={[styles.labelChipText, label === l && styles.labelChipTextActive]}>{l}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.formContainer}>
+              {/* Location Detection Block */}
+              <TouchableOpacity 
+                style={styles.locationBtn} 
+                onPress={detectLocation} 
+                activeOpacity={0.85}
+                disabled={detectingLocation}
+              >
+                {detectingLocation ? (
+                  <ActivityIndicator size="small" color={Colors.white} />
+                ) : (
+                  <Navigation size={16} color={Colors.white} strokeWidth={2.5} />
+                )}
+                <Text style={styles.locationBtnText}>
+                  {detectingLocation ? 'Locating...' : 'Use Current Location'}
+                </Text>
+              </TouchableOpacity>
 
-              <Text style={styles.formLabel}>Full Address Details</Text>
+              {latitude !== 25.774 && longitude !== 84.7374 && (
+                <View style={styles.coordsPreview}>
+                  <Check size={12} color={Colors.successDark} strokeWidth={3} />
+                  <Text style={styles.coordsText}>GPS Locked: {latitude.toFixed(5)}, {longitude.toFixed(5)}</Text>
+                </View>
+              )}
+
+              <Text style={styles.formLabel}>Receiver Name *</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="Flat / House No., Street, Mohalla"
+                placeholder="e.g. Sonu Kumar"
                 placeholderTextColor={Colors.textPlaceholder}
-                value={fullAddress}
-                onChangeText={setFullAddress}
-                multiline
+                value={fullName}
+                onChangeText={setFullName}
+              />
+
+              <Text style={styles.formLabel}>Contact Number *</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g. 9876543210"
+                placeholderTextColor={Colors.textPlaceholder}
+                keyboardType="phone-pad"
+                maxLength={10}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+              />
+
+              <Text style={styles.formLabel}>Flat, House No., Building *</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g. Flat 302, Royal Enclave"
+                placeholderTextColor={Colors.textPlaceholder}
+                value={addressLine1}
+                onChangeText={setAddressLine1}
+              />
+
+              <Text style={styles.formLabel}>Street, Area, Locality</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g. Sadar Bazaar"
+                placeholderTextColor={Colors.textPlaceholder}
+                value={addressLine2}
+                onChangeText={setAddressLine2}
               />
 
               <Text style={styles.formLabel}>Landmark (Optional)</Text>
@@ -264,15 +364,39 @@ export default function AddressesScreen() {
                 onChangeText={setLandmark}
               />
 
-              <Text style={styles.formLabel}>Pincode</Text>
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.formLabel}>City *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Chapra"
+                    placeholderTextColor={Colors.textPlaceholder}
+                    value={city}
+                    onChangeText={setCity}
+                  />
+                </View>
+                <View style={{ width: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.formLabel}>State *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Bihar"
+                    placeholderTextColor={Colors.textPlaceholder}
+                    value={state}
+                    onChangeText={setState}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.formLabel}>Postal / Pincode *</Text>
               <TextInput
                 style={styles.textInput}
                 placeholder="841301"
                 placeholderTextColor={Colors.textPlaceholder}
                 keyboardType="number-pad"
                 maxLength={6}
-                value={pincode}
-                onChangeText={setPincode}
+                value={postalCode}
+                onChangeText={setPostalCode}
               />
 
               <View style={styles.switchRow}>
@@ -285,10 +409,10 @@ export default function AddressesScreen() {
                 />
               </View>
 
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.88}>
                 <Text style={styles.saveBtnText}>Save Address</Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -329,16 +453,16 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.textPrimary },
   emptySub: { fontFamily: 'BeVietnamPro-Regular', color: Colors.textMuted },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: Colors.white, borderTopLeftRadius: Radius.xxl, borderTopRightRadius: Radius.xxl, padding: 20, paddingBottom: 40 },
+  modalContent: { backgroundColor: Colors.white, borderTopLeftRadius: Radius.xxl, borderTopRightRadius: Radius.xxl, padding: 20, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: Colors.borderLight, paddingBottom: 12, marginBottom: 16 },
   modalTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.textPrimary },
-  form: { gap: 12 },
-  formLabel: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.textSecondary },
-  labelRow: { flexDirection: 'row', gap: 10 },
-  labelChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.xl, backgroundColor: Colors.surfaceVariant },
-  labelChipActive: { backgroundColor: Colors.primary },
-  labelChipText: { fontFamily: 'BeVietnamPro-Bold', color: Colors.textSecondary, fontSize: 13 },
-  labelChipTextActive: { color: Colors.white },
+  formContainer: { gap: 12, paddingBottom: 40 },
+  formLabel: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
+  locationBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, paddingVertical: 12, borderRadius: Radius.xl, marginBottom: 4 },
+  locationBtnText: { fontFamily: 'BeVietnamPro-Bold', color: Colors.white, fontSize: 14 },
+  coordsPreview: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.successContainer, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radius.lg, alignSelf: 'flex-start' },
+  coordsText: { fontFamily: 'BeVietnamPro-Medium', fontSize: 11, color: Colors.successDark },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
   textInput: { borderWidth: 1.5, borderColor: Colors.border, borderRadius: Radius.lg, padding: 12, fontFamily: 'BeVietnamPro-Regular', fontSize: 14, color: Colors.textPrimary },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
   switchLabel: { fontFamily: 'BeVietnamPro-Medium', fontSize: 14, color: Colors.textPrimary },

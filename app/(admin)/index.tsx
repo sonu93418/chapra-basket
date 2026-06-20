@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   FlatList, Dimensions, ActivityIndicator, Alert, TextInput,
@@ -9,13 +9,23 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
 import { getSocket } from '../../src/services/socket';
+import { Image } from 'expo-image';
+import { Animated } from 'react-native';
 import {
   MapPin, Bell, Clock, Star, TrendingUp, RefreshCw,
   Map, Store, Package, Check, Phone, MessageCircle, Navigation,
   ShieldAlert, LogOut, Radio, Battery, Signal, UserCheck, Activity, Bike,
-  Search, User, X
+  Search, User, X, SlidersHorizontal, Plus, Trash2, Edit, ChevronUp, ChevronDown, Tag
 } from '../../src/components/ui/Icon';
 import { useGetAdminUsersQuery, useUpdateUserRoleMutation } from '../../src/api/adminApi';
+import {
+  useGetAdminBannersQuery,
+  useCreateBannerMutation,
+  useUpdateBannerMutation,
+  useDeleteBannerMutation,
+  useReorderBannersMutation,
+} from '../../src/api/bannersApi';
+import { API_BASE_URL } from '../../src/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -65,14 +75,175 @@ const INITIAL_FLEET = {
 
 export default function AdminDashboard() {
   const [ridersMap, setRidersMap] = useState<Record<string, any>>(INITIAL_FLEET);
-  const [activeTab, setActiveTab] = useState<'fleet' | 'metrics' | 'users'>('fleet');
+  const [activeTab, setActiveTab] = useState<'fleet' | 'metrics' | 'users' | 'banners'>('fleet');
   const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  // Drawer Animation States
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerAnim = useRef(new Animated.Value(-280)).current;
+
+  // Banner Campaign Management states
+  const [bannerModalVisible, setBannerModalVisible] = useState(false);
+  const [selectedBanner, setSelectedBanner] = useState<any>(null);
+  
+  const [bannerTitle, setBannerTitle] = useState('');
+  const [bannerSubtitle, setBannerSubtitle] = useState('');
+  const [bannerImageUrl, setBannerImageUrl] = useState('');
+  const [bannerCtaText, setBannerCtaText] = useState('');
+  const [bannerClickDestination, setBannerClickDestination] = useState('');
+  const [bannerStartDate, setBannerStartDate] = useState('');
+  const [bannerEndDate, setBannerEndDate] = useState('');
+  const [bannerCampaignType, setBannerCampaignType] = useState('seasonal');
+  const [bannerIsActive, setBannerIsActive] = useState(true);
+  const [bannerSortOrder, setBannerSortOrder] = useState('0');
+
+  // Trigger drawer transition animation
+  useEffect(() => {
+    Animated.timing(drawerAnim, {
+      toValue: drawerOpen ? 0 : -280,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
+  }, [drawerOpen]);
 
   // Admin APIs
   const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useGetAdminUsersQuery(undefined, {
     skip: activeTab !== 'users'
   });
   const [updateUserRole, { isLoading: isUpdatingRole }] = useUpdateUserRoleMutation();
+
+  // Banners admin CRUD APIs
+  const { data: banners, isLoading: bannersLoading, refetch: refetchBanners } = useGetAdminBannersQuery(undefined, {
+    skip: activeTab !== 'banners'
+  });
+  const [createBanner] = useCreateBannerMutation();
+  const [updateBanner] = useUpdateBannerMutation();
+  const [deleteBanner] = useDeleteBannerMutation();
+  const [reorderBanners] = useReorderBannersMutation();
+
+  const getFullImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const baseUrl = API_BASE_URL.replace('/api/v1', '');
+    return `${baseUrl}${url}`;
+  };
+
+  const openBannerModal = (banner?: any) => {
+    if (banner) {
+      setSelectedBanner(banner);
+      setBannerTitle(banner.title || '');
+      setBannerSubtitle(banner.subtitle || '');
+      setBannerImageUrl(banner.imageUrl || '');
+      setBannerCtaText(banner.ctaText || '');
+      setBannerClickDestination(banner.clickDestination || '');
+      setBannerStartDate(banner.startDate ? banner.startDate.split('T')[0] : '');
+      setBannerEndDate(banner.endDate ? banner.endDate.split('T')[0] : '');
+      setBannerCampaignType(banner.campaignType || 'seasonal');
+      setBannerIsActive(banner.isActive);
+      setBannerSortOrder(String(banner.sortOrder || '0'));
+    } else {
+      setSelectedBanner(null);
+      setBannerTitle('');
+      setBannerSubtitle('');
+      setBannerImageUrl('');
+      setBannerCtaText('');
+      setBannerClickDestination('');
+      setBannerStartDate('');
+      setBannerEndDate('');
+      setBannerCampaignType('seasonal');
+      setBannerIsActive(true);
+      setBannerSortOrder(String(banners ? banners.length + 1 : '1'));
+    }
+    setBannerModalVisible(true);
+  };
+
+  const handleSaveBanner = async () => {
+    if (!bannerTitle.trim() || !bannerImageUrl.trim()) {
+      Alert.alert('Error', 'Title and Image URL are required fields.');
+      return;
+    }
+
+    const payload = {
+      title: bannerTitle,
+      subtitle: bannerSubtitle || undefined,
+      imageUrl: bannerImageUrl,
+      ctaText: bannerCtaText || undefined,
+      clickDestination: bannerClickDestination || undefined,
+      startDate: bannerStartDate ? new Date(bannerStartDate).toISOString() : undefined,
+      endDate: bannerEndDate ? new Date(bannerEndDate).toISOString() : undefined,
+      campaignType: bannerCampaignType,
+      isActive: bannerIsActive,
+      sortOrder: Number(bannerSortOrder) || 0,
+    };
+
+    try {
+      if (selectedBanner) {
+        await updateBanner({ id: selectedBanner.id, ...payload }).unwrap();
+        Alert.alert('Success', 'Campaign banner updated successfully');
+      } else {
+        await createBanner(payload).unwrap();
+        Alert.alert('Success', 'New campaign banner created successfully');
+      }
+      setBannerModalVisible(false);
+      refetchBanners();
+    } catch (err: any) {
+      Alert.alert('Error', err?.data?.error || 'Failed to save banner');
+    }
+  };
+
+  const handleDeleteBanner = (id: string) => {
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to remove this promotion campaign?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteBanner(id).unwrap();
+              refetchBanners();
+              Alert.alert('Success', 'Banner deleted successfully');
+            } catch (err: any) {
+              Alert.alert('Error', 'Failed to delete banner');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleMoveBanner = async (index: number, direction: 'up' | 'down') => {
+    if (!banners) return;
+    const list = [...banners];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    const current = list[index];
+    const target = list[targetIndex];
+    
+    const reorders = [
+      { id: current.id, sortOrder: target.sortOrder },
+      { id: target.id, sortOrder: current.sortOrder }
+    ];
+
+    try {
+      await reorderBanners({ reorders }).unwrap();
+      refetchBanners();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to update order');
+    }
+  };
+
+  const handleToggleActive = async (banner: any) => {
+    try {
+      await updateBanner({ id: banner.id, isActive: !banner.isActive }).unwrap();
+      refetchBanners();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to toggle status');
+    }
+  };
 
   const handleRoleChange = async (userId: string, newRole: any) => {
     try {
@@ -140,10 +311,10 @@ export default function AdminDashboard() {
       <SafeAreaView edges={['top']} style={styles.appBar}>
         <View style={styles.appBarInner}>
           <View style={styles.appBarLeft}>
-            <View style={styles.appBarIconWrap}>
-              <Activity size={15} color={Colors.primary} strokeWidth={2.5} />
-            </View>
-            <View>
+            <TouchableOpacity style={styles.menuToggleButton} onPress={() => setDrawerOpen(true)}>
+              <SlidersHorizontal size={20} color={Colors.primary} strokeWidth={2.5} />
+            </TouchableOpacity>
+            <View style={{ marginLeft: 6 }}>
               <Text style={styles.appBarTitle}>Operations Control</Text>
               <Text style={styles.appBarSub}>Blink Box Hub Dispatch Center</Text>
             </View>
@@ -233,6 +404,12 @@ export default function AdminDashboard() {
             onPress={() => setActiveTab('users')}
           >
             <Text style={[styles.tabText, activeTab === 'users' && styles.tabTextActive]}>User Roles</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'banners' && styles.tabActive]}
+            onPress={() => setActiveTab('banners')}
+          >
+            <Text style={[styles.tabText, activeTab === 'banners' && styles.tabTextActive]}>Promotions</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'metrics' && styles.tabActive]}
@@ -388,8 +565,307 @@ export default function AdminDashboard() {
           </View>
         )}
 
+        {/* Dynamic Promotional Banners Tab */}
+        {activeTab === 'banners' && (
+          <View style={styles.bannersTabContainer}>
+            <View style={styles.bannersHeaderRow}>
+              <Text style={styles.sectionTitle}>Campaign Banners</Text>
+              <TouchableOpacity style={styles.addBannerBtn} onPress={() => openBannerModal()}>
+                <Plus size={14} color={Colors.white} strokeWidth={2.5} />
+                <Text style={styles.addBannerBtnText}>Add Banner</Text>
+              </TouchableOpacity>
+            </View>
+
+            {bannersLoading ? (
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: 40 }} />
+            ) : banners && banners.length === 0 ? (
+              <View style={styles.emptyBannersBox}>
+                <Tag size={48} color="rgba(255,255,255,0.1)" />
+                <Text style={styles.emptyBannersText}>No promotions configured.</Text>
+                <Text style={styles.emptyBannersSub}>Create a banner campaign to display on the customer home page.</Text>
+              </View>
+            ) : (
+              <View style={{ gap: 14 }}>
+                {banners?.map((banner, index) => (
+                  <View key={banner.id} style={[styles.adminBannerCard, !banner.isActive && styles.adminBannerCardInactive]}>
+                    <View style={styles.adminBannerImageContainer}>
+                      <Image
+                        source={{ uri: getFullImageUrl(banner.imageUrl) }}
+                        style={styles.adminBannerImage}
+                        contentFit="cover"
+                      />
+                      <View style={[styles.campaignTypeTag, { backgroundColor: banner.isActive ? Colors.primary : Colors.dark.textMuted }]}>
+                        <Text style={styles.campaignTypeTagText}>{(banner.campaignType || 'promo').toUpperCase()}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.adminBannerDetails}>
+                      <Text style={styles.adminBannerTitleText}>{banner.title}</Text>
+                      {banner.subtitle ? <Text style={styles.adminBannerSubtitleText}>{banner.subtitle}</Text> : null}
+                      <Text style={styles.adminBannerDestText}>Destination: <Text style={{ color: Colors.white }}>{banner.clickDestination || '/'}</Text></Text>
+                      
+                      <View style={styles.adminBannerInfoRow}>
+                        <Text style={styles.adminBannerInfoLabel}>
+                          Clicks: <Text style={{ color: Colors.primary, fontFamily: 'BeVietnamPro-Bold' }}>{banner.clicks || 0}</Text>
+                        </Text>
+                        <Text style={styles.adminBannerInfoLabel}>
+                          Order: <Text style={{ color: Colors.white }}>{banner.sortOrder}</Text>
+                        </Text>
+                      </View>
+
+                      {banner.startDate || banner.endDate ? (
+                        <Text style={styles.adminBannerDatesText}>
+                          Sched: {banner.startDate ? banner.startDate.split('T')[0] : 'Any'} to {banner.endDate ? banner.endDate.split('T')[0] : 'Any'}
+                        </Text>
+                      ) : (
+                        <Text style={styles.adminBannerDatesText}>Sched: Always Active</Text>
+                      )}
+
+                      <View style={styles.adminBannerActionRow}>
+                        <TouchableOpacity
+                          style={[styles.toggleBtn, banner.isActive ? styles.toggleBtnActive : styles.toggleBtnInactive]}
+                          onPress={() => handleToggleActive(banner)}
+                        >
+                          <Text style={styles.toggleBtnText}>{banner.isActive ? 'Active' : 'Paused'}</Text>
+                        </TouchableOpacity>
+
+                        <View style={{ flexDirection: 'row', gap: 6, marginLeft: 12 }}>
+                          <TouchableOpacity
+                            style={[styles.moveBtn, index === 0 && styles.moveBtnDisabled]}
+                            disabled={index === 0}
+                            onPress={() => handleMoveBanner(index, 'up')}
+                          >
+                            <ChevronUp size={16} color={index === 0 ? 'rgba(255,255,255,0.2)' : Colors.white} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.moveBtn, index === (banners?.length || 0) - 1 && styles.moveBtnDisabled]}
+                            disabled={index === (banners?.length || 0) - 1}
+                            onPress={() => handleMoveBanner(index, 'down')}
+                          >
+                            <ChevronDown size={16} color={index === (banners?.length || 0) - 1 ? 'rgba(255,255,255,0.2)' : Colors.white} />
+                          </TouchableOpacity>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', gap: 8, marginLeft: 'auto' }}>
+                          <TouchableOpacity style={styles.editBtn} onPress={() => openBannerModal(banner)}>
+                            <Edit size={14} color={Colors.white} />
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteBanner(banner.id)}>
+                            <Trash2 size={14} color={Colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={{ height: 60 }} />
       </ScrollView>
+
+      {/* Slide-out Operations Drawer Menu Overlay */}
+      {drawerOpen && (
+        <View style={StyleSheet.absoluteFillObject}>
+          <TouchableOpacity
+            style={styles.drawerBackdrop}
+            activeOpacity={1}
+            onPress={() => setDrawerOpen(false)}
+          />
+          <Animated.View style={[styles.drawerPanel, { transform: [{ translateX: drawerAnim }] }]}>
+            <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
+              <View style={styles.drawerHeader}>
+                <Activity size={18} color={Colors.primary} strokeWidth={2.5} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.drawerTitle}>Operations Hub</Text>
+                  <Text style={styles.drawerSub}>Chapra Central Hub Desk</Text>
+                </View>
+              </View>
+
+              <View style={styles.drawerMenuContainer}>
+                {[
+                  { id: 'fleet', label: 'Hub Dispatch Center', icon: Bike },
+                  { id: 'users', label: 'User Access Roles', icon: UserCheck },
+                  { id: 'banners', label: 'Campaign Manager', icon: Tag },
+                  { id: 'metrics', label: 'Metrics & Analytics', icon: TrendingUp },
+                ].map(item => {
+                  const active = activeTab === item.id;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.drawerMenuItem, active && styles.drawerMenuItemActive]}
+                      onPress={() => {
+                        setActiveTab(item.id as any);
+                        setDrawerOpen(false);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <item.icon size={18} color={active ? Colors.primary : 'rgba(255,255,255,0.6)'} />
+                      <Text style={[styles.drawerMenuLabel, active && styles.drawerMenuLabelActive]}>
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={{ marginTop: 'auto', paddingVertical: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' }}>
+                <TouchableOpacity 
+                  style={styles.drawerLogoutBtn} 
+                  onPress={() => {
+                    setDrawerOpen(false);
+                    router.replace('/(auth)/user-type');
+                  }}
+                >
+                  <LogOut size={16} color="rgba(255,255,255,0.6)" />
+                  <Text style={styles.drawerLogoutText}>Exit Operations</Text>
+                </TouchableOpacity>
+              </View>
+            </SafeAreaView>
+          </Animated.View>
+        </View>
+      )}
+
+      {/* Create / Edit Banner Campaign Modal */}
+      {bannerModalVisible && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{selectedBanner ? 'Modify Campaign' : 'Schedule Promotion'}</Text>
+              <TouchableOpacity onPress={() => setBannerModalVisible(false)}>
+                <X size={18} color="rgba(255,255,255,0.7)" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalScroll}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Title (Headline) *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={bannerTitle}
+                  onChangeText={setBannerTitle}
+                  placeholder="Welcome to Blink Box"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Subtitle (Subheadline)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={bannerSubtitle}
+                  onChangeText={setBannerSubtitle}
+                  placeholder="Fresh Groceries Delivered in Minutes"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Image URL *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={bannerImageUrl}
+                  onChangeText={setBannerImageUrl}
+                  placeholder="/static/banners/welcome.png"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>CTA Text</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={bannerCtaText}
+                  onChangeText={setBannerCtaText}
+                  placeholder="Start Shopping"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Click Destination (Category slug or page path)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={bannerClickDestination}
+                  onChangeText={setBannerClickDestination}
+                  placeholder="grocery"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                />
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={bannerStartDate}
+                    onChangeText={setBannerStartDate}
+                    placeholder="2026-06-12"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>End Date (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={bannerEndDate}
+                    onChangeText={setBannerEndDate}
+                    placeholder="2026-07-12"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                  />
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Campaign Type</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={bannerCampaignType}
+                    onChangeText={setBannerCampaignType}
+                    placeholder="welcome / seasonal / flash"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Sort Order Weight</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={bannerSortOrder}
+                    onChangeText={setBannerSortOrder}
+                    placeholder="0"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, marginBottom: 12 }}>
+                <TouchableOpacity
+                  style={[styles.checkboxContainer, bannerIsActive && styles.checkboxActive]}
+                  onPress={() => setBannerIsActive(!bannerIsActive)}
+                >
+                  {bannerIsActive && <Check size={12} color={Colors.white} />}
+                </TouchableOpacity>
+                <Text style={{ fontFamily: 'BeVietnamPro-Medium', fontSize: 13, color: Colors.white }}>
+                  Enable Campaign Visibility (isActive)
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setBannerModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSaveBanner}>
+                <Text style={styles.saveBtnText}>Save Campaign</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -477,4 +953,71 @@ const styles = StyleSheet.create({
   roleSelectBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   roleSelectBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 10, color: Colors.dark.textSecondary },
   roleSelectBtnTextActive: { color: Colors.white },
+
+  // Drawer Styles
+  drawerBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 100 },
+  drawerPanel: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#0B0D14', borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.07)', zIndex: 101, padding: 20 },
+  drawerHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', marginBottom: 20 },
+  drawerTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 16, color: Colors.white },
+  drawerSub: { fontFamily: 'BeVietnamPro-Regular', fontSize: 11, color: Colors.dark.textMuted },
+  drawerMenuContainer: { gap: 6 },
+  drawerMenuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: Radius.lg },
+  drawerMenuItemActive: { backgroundColor: 'rgba(255,107,0,0.12)' },
+  drawerMenuLabel: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 14, color: 'rgba(255,255,255,0.6)' },
+  drawerMenuLabelActive: { color: Colors.primary },
+  drawerLogoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
+  drawerLogoutText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: 'rgba(255,255,255,0.6)' },
+  menuToggleButton: { padding: 4 },
+
+  // Banners Management styles
+  bannersTabContainer: { gap: 14 },
+  bannersHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  addBannerBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radius.full },
+  addBannerBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 12, color: Colors.white },
+  emptyBannersBox: { alignItems: 'center', paddingVertical: 48, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: Radius.xl, borderStyle: 'dashed', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)' },
+  emptyBannersText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 15, color: Colors.white, marginTop: 12 },
+  emptyBannersSub: { fontFamily: 'BeVietnamPro-Regular', fontSize: 12, color: Colors.dark.textMuted, textAlign: 'center', paddingHorizontal: 32, marginTop: 4, lineHeight: 18 },
+  sectionTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 18, color: Colors.white },
+  
+  adminBannerCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: Radius.xl, overflow: 'hidden' },
+  adminBannerCardInactive: { opacity: 0.55 },
+  adminBannerImageContainer: { height: 120, position: 'relative' },
+  adminBannerImage: { width: '100%', height: '100%' },
+  campaignTypeTag: { position: 'absolute', top: 10, left: 10, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.sm },
+  campaignTypeTagText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 8, color: Colors.white },
+  
+  adminBannerDetails: { padding: 16 },
+  adminBannerTitleText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 16, color: Colors.white },
+  adminBannerSubtitleText: { fontFamily: 'BeVietnamPro-Regular', fontSize: 12, color: Colors.dark.textMuted, marginTop: 2 },
+  adminBannerDestText: { fontFamily: 'BeVietnamPro-Medium', fontSize: 12, color: Colors.dark.textSecondary, marginTop: 8 },
+  adminBannerInfoRow: { flexDirection: 'row', gap: 20, marginTop: 6 },
+  adminBannerInfoLabel: { fontFamily: 'BeVietnamPro-Medium', fontSize: 11, color: Colors.dark.textMuted },
+  adminBannerDatesText: { fontFamily: 'BeVietnamPro-Medium', fontSize: 11, color: Colors.dark.textMuted, marginTop: 4 },
+  
+  adminBannerActionRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 12 },
+  toggleBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full, borderWidth: 1 },
+  toggleBtnActive: { backgroundColor: 'rgba(0,200,83,0.15)', borderColor: 'rgba(0,200,83,0.3)' },
+  toggleBtnInactive: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' },
+  toggleBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 10, color: Colors.successLight },
+  moveBtn: { width: 32, height: 32, borderRadius: Radius.sm, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center' },
+  moveBtnDisabled: { opacity: 0.3 },
+  editBtn: { width: 32, height: 32, borderRadius: Radius.sm, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { width: 32, height: 32, borderRadius: Radius.sm, backgroundColor: 'rgba(186,26,26,0.1)', alignItems: 'center', justifyContent: 'center' },
+
+  // Modal styles
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 200 },
+  modalContainer: { width: '100%', maxHeight: '85%', backgroundColor: '#0F121C', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: Radius.xxl, padding: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingBottom: 12, marginBottom: 14 },
+  modalTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 16, color: Colors.white },
+  modalScroll: { gap: 12 },
+  inputGroup: { gap: 6 },
+  inputLabel: { fontFamily: 'BeVietnamPro-Bold', fontSize: 11, color: Colors.dark.textSecondary },
+  modalInput: { height: 42, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderRadius: Radius.lg, paddingHorizontal: 12, color: Colors.white, fontFamily: 'BeVietnamPro-Medium', fontSize: 13 },
+  checkboxContainer: { width: 18, height: 18, borderRadius: 4, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' },
+  checkboxActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  modalFooter: { flexDirection: 'row', gap: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 14, marginTop: 14 },
+  cancelBtn: { flex: 1, paddingVertical: 12, borderRadius: Radius.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
+  cancelBtnText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.dark.textSecondary },
+  saveBtn: { flex: 2, backgroundColor: Colors.primary, paddingVertical: 12, borderRadius: Radius.xl, alignItems: 'center' },
+  saveBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13, color: Colors.white },
 });

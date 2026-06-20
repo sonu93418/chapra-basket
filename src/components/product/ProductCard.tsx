@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Colors, TextStyles, Radius, Shadows, Spacing } from '../../theme';
 import { Product } from '../../types';
 import { QuantitySelector } from './QuantitySelector';
@@ -34,7 +34,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Image Container */}
       <View style={[styles.imageContainer, isWide && styles.imageContainerWide]}>
-        <Image source={{ uri: product.images[0] }} style={styles.image} resizeMode="cover" />
+        <Image source={{ uri: product.images[0] }} style={styles.image} contentFit="cover" transition={200} />
         {/* Discount Badge */}
         {hasDiscount && product.discountPercent && (
           <View style={styles.discountBadge}>

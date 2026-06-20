@@ -17,15 +17,21 @@ export type AddressLabel = 'Home' | 'Work' | 'Other';
 
 export interface Address {
   id: string;
-  label: AddressLabel;
-  fullAddress: string;
+  userId?: string;
+  fullName: string;
+  phoneNumber: string;
+  addressLine1: string;
+  addressLine2?: string;
   landmark?: string;
-  lat: number;
-  lng: number;
   city: string;
   state: string;
-  pincode: string;
+  postalCode: string;
+  country: string;
+  latitude: number;
+  longitude: number;
   isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ─── Category Types ────────────────────────────────────────────
@@ -44,6 +50,7 @@ export interface Category {
 export interface Product {
   id: string;
   categoryId: string;
+  storeId?: string;
   name: string;
   nameHindi?: string;
   description?: string;
@@ -57,6 +64,25 @@ export interface Product {
   images: string[];
   tags: string[];
   discountPercent?: number;
+
+  // Premium product metadata
+  sku?: string;
+  barcode?: string;
+  brand?: string;
+  subcategory?: string;
+  shortDescription?: string;
+  weightOrVolume?: string;
+  gstPercent?: number;
+  shelfLife?: string;
+  manufacturingDate?: string;
+  expiryDate?: string;
+  countryOfOrigin?: string;
+  manufacturer?: string;
+  storageInstructions?: string;
+  averageRating?: number;
+  reviewCount?: number;
+  deliveryEtaMinutes?: number;
+  isTrending?: boolean;
 }
 
 // ─── Cart Types ────────────────────────────────────────────────
@@ -218,4 +244,21 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   hasMore: boolean;
+}
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl: string;
+  ctaText?: string;
+  clickDestination?: string;
+  isActive: boolean;
+  sortOrder: number;
+  startDate?: string | null;
+  endDate?: string | null;
+  campaignType?: string;
+  clicks: number;
+  createdAt?: string;
+  updatedAt?: string;
 }

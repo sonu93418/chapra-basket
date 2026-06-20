@@ -21,16 +21,20 @@ create table users (
 create table addresses (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references users(id) on delete cascade,
-  label varchar(24) not null,
-  full_address text not null,
+  full_name varchar(120) not null,
+  phone_number varchar(20) not null,
+  address_line_1 text not null,
+  address_line_2 text,
   landmark text,
-  lat numeric(10, 7) not null,
-  lng numeric(10, 7) not null,
   city varchar(80) not null,
   state varchar(80) not null,
-  pincode varchar(12) not null,
+  postal_code varchar(12) not null,
+  country varchar(80) not null default 'India',
+  latitude numeric(10, 7) not null,
+  longitude numeric(10, 7) not null,
   is_default boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table stores (
@@ -290,4 +294,24 @@ create table if not exists otp_logs (
 create index if not exists idx_otp_verifications_phone_created on otp_verifications(phone, created_at desc);
 create index if not exists idx_user_sessions_token on user_sessions(refresh_token_hash);
 create index if not exists idx_login_attempts_phone on login_attempts(phone, attempted_at desc);
+
+create table if not exists banners (
+  id uuid primary key default uuid_generate_v4(),
+  title varchar(180) not null,
+  subtitle text,
+  image_url text not null,
+  cta_text varchar(60),
+  click_destination varchar(255),
+  is_active boolean not null default true,
+  sort_order int not null default 0,
+  start_date timestamptz,
+  end_date timestamptz,
+  campaign_type varchar(60),
+  clicks int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_banners_active_order on banners(is_active, sort_order);
+
 

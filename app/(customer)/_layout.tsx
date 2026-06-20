@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Radius } from '../../src/theme';
 import { useAppSelector } from '../../src/hooks/useAppDispatch';
@@ -35,8 +35,23 @@ function TabIcon({ Icon, label, focused, badge }: TabIconProps) {
 }
 
 export default function CustomerLayout() {
+  const { isAuthenticated, user, isLoading } = useAppSelector(s => s.auth);
   const cartItems = useAppSelector(s => s.cart.items);
   const cartCount = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  if (user.role !== 'customer') {
+    if (user.role === 'rider') return <Redirect href="/(rider)" />;
+    if (user.role === 'store_owner') return <Redirect href="/(store)" />;
+    if (user.role === 'admin') return <Redirect href="/(admin)" />;
+  }
 
   return (
     <Tabs

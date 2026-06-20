@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Dimensions, Share,
+  Dimensions, Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -76,7 +77,8 @@ export default function ProductDetailScreen() {
           <Image
             source={{ uri: product.images[activeImage] }}
             style={styles.mainImage}
-            resizeMode="cover"
+            contentFit="cover"
+            transition={200}
           />
 
           {/* Badges */}
@@ -190,6 +192,63 @@ export default function ProductDetailScreen() {
                   onDecrement={() => dispatch(decrementQuantity(product.id))}
                   size="lg"
                 />
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Product Description */}
+        {product.description && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Product Details</Text>
+            <Text style={styles.descriptionText}>{product.description}</Text>
+          </View>
+        )}
+
+        {/* Product Specifications */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Specifications</Text>
+          <View style={styles.specsTable}>
+            {product.brand && (
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Brand</Text>
+                <Text style={styles.specValue}>{product.brand}</Text>
+              </View>
+            )}
+            {product.shelfLife && (
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Shelf Life</Text>
+                <Text style={styles.specValue}>{product.shelfLife}</Text>
+              </View>
+            )}
+            {product.countryOfOrigin && (
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Country of Origin</Text>
+                <Text style={styles.specValue}>{product.countryOfOrigin}</Text>
+              </View>
+            )}
+            {product.storageInstructions && (
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Storage Instructions</Text>
+                <Text style={styles.specValue}>{product.storageInstructions}</Text>
+              </View>
+            )}
+            {product.manufacturer && (
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Manufacturer</Text>
+                <Text style={styles.specValue}>{product.manufacturer}</Text>
+              </View>
+            )}
+            {product.sku && (
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>SKU</Text>
+                <Text style={styles.specValue}>{product.sku}</Text>
+              </View>
+            )}
+            {product.barcode && (
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Barcode</Text>
+                <Text style={styles.specValue}>{product.barcode}</Text>
               </View>
             )}
           </View>
@@ -343,4 +402,10 @@ const styles = StyleSheet.create({
   featureItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   featureIcon: { fontSize: 20, width: 28 },
   featureText: { fontFamily: 'BeVietnamPro-Regular', fontSize: 14, color: Colors.textSecondary, flex: 1 },
+
+  descriptionText: { fontFamily: 'BeVietnamPro-Regular', fontSize: 14, color: Colors.textSecondary, lineHeight: 22 },
+  specsTable: { borderTopWidth: 1, borderTopColor: Colors.borderLight, marginTop: 4 },
+  specRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
+  specLabel: { fontFamily: 'BeVietnamPro-Medium', fontSize: 13, color: Colors.textSecondary, width: '40%' },
+  specValue: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.textPrimary, width: '60%', textAlign: 'right' },
 });

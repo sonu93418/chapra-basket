@@ -22,6 +22,18 @@ import {
 } from '../../src/components/ui/Icon';
 import { formatCurrencyFull } from '../../src/utils/format';
 
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+}
+
 // ─── Payment Methods (SVG icons) ─────────────────────────────────────────────
 const PAYMENT_METHODS = [
   { id: 'upi',     label: 'UPI / Google Pay',        Icon: Smartphone, desc: 'PhonePe · GPay · Paytm',  popular: false, color: '#4285F4' },
@@ -89,6 +101,28 @@ export default function CheckoutScreen() {
       return;
     }
 
+    // 1. Completeness Validation
+    const { fullName, phoneNumber, addressLine1, city, state, postalCode, latitude: addrLat, longitude: addrLng } = selectedAddress;
+    if (!fullName?.trim() || !phoneNumber?.trim() || !addressLine1?.trim() || !city?.trim() || !state?.trim() || !postalCode?.trim()) {
+      Alert.alert('Incomplete Address', 'The selected address is incomplete. Please edit it to include Name, Phone, Address details, and Pincode.');
+      return;
+    }
+
+    // 2. Delivery Zone Validation (25km radius from Chapra center 25.774, 84.7374)
+    const distance = getDistanceFromLatLonInKm(
+      addrLat || 25.774,
+      addrLng || 84.7374,
+      25.774,
+      84.7374
+    );
+    if (distance > 25) {
+      Alert.alert(
+        'Outside Delivery Zone',
+        `Sorry, we cannot deliver to this address. It is ${distance.toFixed(1)} km away from Chapra, which exceeds our 25 km limit.`
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       const orderParams = {
@@ -142,7 +176,7 @@ export default function CheckoutScreen() {
               {selectedAddress ? (
                 <View style={styles.addressInfo}>
                   <View style={styles.addressLabelRow}>
-                    <Text style={styles.addressLabel}>{selectedAddress.label}</Text>
+                    <Text style={styles.addressLabel}>{selectedAddress.fullName} ({selectedAddress.phoneNumber})</Text>
                     {selectedAddress.isDefault && (
                       <View style={styles.defaultBadge}>
                         <Text style={styles.defaultBadgeText}>Default</Text>
@@ -150,7 +184,7 @@ export default function CheckoutScreen() {
                     )}
                   </View>
                   <Text style={styles.addressFull} numberOfLines={2}>
-                    {selectedAddress.fullAddress}
+                    {selectedAddress.addressLine1}{selectedAddress.addressLine2 ? `, ${selectedAddress.addressLine2}` : ''}, {selectedAddress.city} — {selectedAddress.postalCode}
                   </Text>
                 </View>
               ) : (

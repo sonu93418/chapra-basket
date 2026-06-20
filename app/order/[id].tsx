@@ -230,8 +230,10 @@ export default function OrderDetailScreen() {
           <View style={styles.addressRow}>
             <MapPin size={20} color={Colors.primary} style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.addressLabel}>{order.address.label}</Text>
-              <Text style={styles.addressText}>{order.address.fullAddress}</Text>
+              <Text style={styles.addressLabel}>{order.address.fullName} ({order.address.phoneNumber})</Text>
+              <Text style={styles.addressText}>
+                {order.address.addressLine1}{order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, {order.address.city} — {order.address.postalCode}
+              </Text>
               {order.address.landmark && (
                 <Text style={styles.addressLandmark}>Near: {order.address.landmark}</Text>
               )}

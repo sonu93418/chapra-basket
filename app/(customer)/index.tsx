@@ -7,11 +7,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { Colors, TextStyles, Radius, Spacing, Shadows } from '../../src/theme';
 import { ProductCard } from '../../src/components/product/ProductCard';
 import { ViewCartBar } from '../../src/components/cart/ViewCartBar';
 import { useAppSelector, useAppDispatch } from '../../src/hooks/useAppDispatch';
 import { addToCart, incrementQuantity, decrementQuantity } from '../../src/features/cart/cartSlice';
+import { useGetDefaultAddressQuery } from '../../src/api/addressesApi';
+import { useGetBannersQuery, useTrackBannerClickMutation } from '../../src/api/bannersApi';
+import { API_BASE_URL } from '../../src/constants';
 import { CATEGORIES, FEATURED_PRODUCTS, FLASH_SALE_PRODUCTS, BANNERS, FRESH_PRODUCTS, PRODUCTS } from '../../src/data/mockData';
 import {
   MapPin, Bell, Search, Mic2, Zap, ChevronRight,
@@ -47,6 +51,19 @@ const CATEGORY_ICONS: Record<string, any> = {
   electronics: Zap,
   stationery: Briefcase,
   'personal-care': ShoppingBag,
+};
+
+const CATEGORY_IMAGES: Record<string, any> = {
+  grocery: require('../../assets/categories/grocery.png'),
+  fruits: require('../../assets/categories/fruits.png'),
+  vegetables: require('../../assets/categories/vegetables.png'),
+  dairy: require('../../assets/categories/dairy.png'),
+  medicines: require('../../assets/categories/medicines.png'),
+  snacks: require('../../assets/categories/snacks.png'),
+  beverages: require('../../assets/categories/beverages.png'),
+  electronics: require('../../assets/categories/electronics.png'),
+  stationery: require('../../assets/categories/stationery.png'),
+  'personal-care': require('../../assets/categories/personal-care.png'),
 };
 
 // ─── Custom Rebranding Lists ──────────────────────────────────────────────────
@@ -102,6 +119,48 @@ export default function HomeScreen() {
   const [activeBanner, setActiveBanner] = useState(0);
   const flashTimer = useCountdown(2 * 3600 + 47 * 60 + 33);
 
+  const { data: defaultAddress } = useGetDefaultAddressQuery();
+  const { data: dynamicBannersData } = useGetBannersQuery();
+  const [trackBannerClick] = useTrackBannerClickMutation();
+
+  const dynamicBanners = dynamicBannersData || [];
+  const bannersToDisplay = dynamicBanners.length > 0 ? dynamicBanners : BANNERS;
+
+  const bannerFlatListRef = useRef<FlatList>(null);
+  const activeBannerRef = useRef(activeBanner);
+  activeBannerRef.current = activeBanner;
+
+  useEffect(() => {
+    if (bannersToDisplay.length <= 1) return;
+    const interval = setInterval(() => {
+      const nextIndex = (activeBannerRef.current + 1) % bannersToDisplay.length;
+      setActiveBanner(nextIndex);
+      bannerFlatListRef.current?.scrollToIndex({
+        index: nextIndex,
+        animated: true,
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [bannersToDisplay.length]);
+
+  const getFullImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const baseUrl = API_BASE_URL.replace('/api/v1', '');
+    return `${baseUrl}${url}`;
+  };
+
+  const handleBannerPress = (banner: any) => {
+    trackBannerClick(banner.id);
+    if (banner.clickDestination) {
+      if (banner.clickDestination.startsWith('/')) {
+        router.push(banner.clickDestination as any);
+      } else {
+        router.push(`/category/${banner.clickDestination}` as any);
+      }
+    }
+  };
+
   const totalItems = cartItems.reduce((sum, i) => sum + i.quantity, 0);
   const totalAmount = cartItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const getQty = (id: string) => cartItems.find(i => i.product.id === id)?.quantity ?? 0;
@@ -119,14 +178,20 @@ export default function HomeScreen() {
 
       {/* ── Top Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.locationRow} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.locationRow}
+          onPress={() => router.push('/addresses')}
+          activeOpacity={0.8}
+        >
           <View style={styles.locationIconWrap}>
             <MapPin size={16} color={Colors.primary} strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.locationLabel}>Delivering to</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.locationAddress} numberOfLines={1}>Sadar Bazaar, Patna</Text>
+              <Text style={styles.locationAddress} numberOfLines={1}>
+                {defaultAddress ? `${defaultAddress.addressLine1}, ${defaultAddress.city}` : 'Add Delivery Location'}
+              </Text>
               <ChevronRight size={14} color={Colors.textPrimary} strokeWidth={2.5} />
             </View>
           </View>
@@ -183,60 +248,65 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Banner Carousel ── */}
-        <View style={styles.sectionNoPad}>
-          <FlatList
-            data={BANNERS}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={BANNER_WIDTH + 12}
-            decelerationRate="fast"
-            onMomentumScrollEnd={(e) => {
-              setActiveBanner(Math.round(e.nativeEvent.contentOffset.x / (BANNER_WIDTH + 12)));
-            }}
-            keyExtractor={b => b.id}
-            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => router.push(`/category/${item.categorySlug}` as any)}
-                activeOpacity={0.92}
-                style={{ width: BANNER_WIDTH }}
-              >
-                <LinearGradient
-                  colors={item.gradient as [string, string]}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  style={styles.banner}
+        {bannersToDisplay.length > 0 && (
+          <View style={styles.sectionNoPad}>
+            <FlatList
+              ref={bannerFlatListRef}
+              data={bannersToDisplay}
+              horizontal
+              pagingEnabled={false}
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={BANNER_WIDTH + 12}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              contentContainerStyle={{ paddingHorizontal: 16 }}
+              onMomentumScrollEnd={(e) => {
+                setActiveBanner(Math.round(e.nativeEvent.contentOffset.x / (BANNER_WIDTH + 12)));
+              }}
+              keyExtractor={b => b.id}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => handleBannerPress(item)}
+                  activeOpacity={0.92}
+                  style={{ width: BANNER_WIDTH, height: BANNER_WIDTH * 0.5, borderRadius: Radius.xxl, overflow: 'hidden' }}
                 >
-                  <View style={styles.bannerContent}>
-                    <View style={styles.bannerTagPill}>
-                      <Tag size={10} color={Colors.white} strokeWidth={2} />
-                      <Text style={styles.bannerTag}>{item.subtitle}</Text>
-                    </View>
-                    <Text style={styles.bannerTitle}>{item.title}</Text>
-                    <View style={styles.bannerBtn}>
-                      <Text style={styles.bannerBtnText}>Shop Now</Text>
-                      <ChevronRight size={13} color={Colors.white} strokeWidth={2.5} />
-                    </View>
-                  </View>
-                  <View style={styles.bannerEmoji}>
-                    {item.categorySlug === 'vegetables' ? (
-                      <Leaf size={56} color="rgba(255,255,255,0.3)" strokeWidth={2} />
-                    ) : item.categorySlug === 'dairy' ? (
-                      <ShoppingBag size={56} color="rgba(255,255,255,0.3)" strokeWidth={2} />
-                    ) : (
-                      <Store size={56} color="rgba(255,255,255,0.3)" strokeWidth={2} />
+                  <Image
+                    source={{ uri: getFullImageUrl(item.imageUrl) }}
+                    style={StyleSheet.absoluteFillObject}
+                    contentFit="cover"
+                  />
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.65)', 'rgba(0,0,0,0.1)']}
+                    start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <View style={styles.premiumBannerOverlay}>
+                    {item.subtitle && (
+                      <View style={styles.premiumBannerTag}>
+                        <Text style={styles.premiumBannerTagText}>{item.subtitle}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.premiumBannerTitle} numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                    {item.ctaText && (
+                      <View style={styles.premiumBannerBtn}>
+                        <Text style={styles.premiumBannerBtnText}>{item.ctaText}</Text>
+                        <ChevronRight size={12} color={Colors.white} strokeWidth={3} />
+                      </View>
                     )}
                   </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
-          />
-          <View style={styles.bannerDots}>
-            {BANNERS.map((_, i) => (
-              <View key={i} style={[styles.bannerDot, i === activeBanner && styles.bannerDotActive]} />
-            ))}
+                </TouchableOpacity>
+              )}
+            />
+            <View style={styles.bannerDots}>
+              {bannersToDisplay.map((_, i) => (
+                <View key={i} style={[styles.bannerDot, i === activeBanner && styles.bannerDotActive]} />
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* ── Categories ── */}
         <View style={styles.section}>
@@ -255,13 +325,21 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/category/${item.slug}` as any)}
                   activeOpacity={0.85}
                 >
-                  <LinearGradient colors={[bgFrom, bgTo]} style={styles.categoryIconBg}>
-                    {React.createElement(CATEGORY_ICONS[item.slug] || Package, {
-                      size: 24,
-                      color: Colors.primaryDark,
-                      strokeWidth: 2,
-                    })}
-                  </LinearGradient>
+                  {CATEGORY_IMAGES[item.slug] ? (
+                    <Image
+                      source={CATEGORY_IMAGES[item.slug]}
+                      style={styles.categoryIconBg}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <LinearGradient colors={[bgFrom, bgTo]} style={styles.categoryIconBg}>
+                      {React.createElement(CATEGORY_ICONS[item.slug] || Package, {
+                        size: 24,
+                        color: Colors.primaryDark,
+                        strokeWidth: 2,
+                      })}
+                    </LinearGradient>
+                  )}
                   <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
                 </TouchableOpacity>
               );
@@ -569,20 +647,55 @@ const styles = StyleSheet.create({
 
   // Sections
   section: { paddingLeft: Spacing.lg, marginBottom: 28 },
-  sectionNoPad: { paddingHorizontal: Spacing.lg, marginBottom: 24 },
+  sectionNoPad: { marginBottom: 24 },
 
   // Banner
-  banner: { borderRadius: Radius.xxl, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 158 },
-  bannerContent: { flex: 1 },
-  bannerTagPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.22)', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full, marginBottom: 8 },
-  bannerTag: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 11, color: Colors.white },
-  bannerTitle: { fontFamily: 'BeVietnamPro-Bold', fontSize: 20, color: Colors.white, marginBottom: 14, lineHeight: 26 },
-  bannerBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: Radius.button, alignSelf: 'flex-start' },
-  bannerBtnText: { fontFamily: 'BeVietnamPro-Bold', fontSize: 13, color: Colors.white },
-  bannerEmoji: { marginLeft: 12 },
   bannerDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 10 },
   bannerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.border },
   bannerDotActive: { width: 20, backgroundColor: Colors.primary, borderRadius: 3 },
+  premiumBannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    padding: 24,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    zIndex: 10,
+  },
+  premiumBannerTag: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    marginBottom: 6,
+  },
+  premiumBannerTagText: {
+    fontFamily: 'BeVietnamPro-SemiBold',
+    fontSize: 9,
+    color: Colors.white,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  premiumBannerTitle: {
+    fontFamily: 'BeVietnamPro-Bold',
+    fontSize: 20,
+    color: Colors.white,
+    marginBottom: 12,
+    lineHeight: 26,
+    maxWidth: '80%',
+  },
+  premiumBannerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.button,
+  },
+  premiumBannerBtnText: {
+    fontFamily: 'BeVietnamPro-Bold',
+    fontSize: 11,
+    color: Colors.white,
+  },
 
   // Categories
   categoryCard: { width: 76, alignItems: 'center', gap: 4 },

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../config/db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const storesRouter = Router();
 
@@ -47,7 +47,7 @@ storesRouter.get('/:id', async (req, res) => {
   res.json({ success: true, data: store });
 });
 
-storesRouter.patch('/:id/status', requireAuth, async (req, res) => {
+storesRouter.patch('/:id/status', requireRole(['store_owner', 'admin']), async (req, res) => {
   const { id } = req.params;
   const { isOpen } = req.body;
 

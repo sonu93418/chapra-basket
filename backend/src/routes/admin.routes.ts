@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../config/db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const adminRouter = Router();
 
@@ -45,7 +45,7 @@ let mockUsers = [
 ];
 
 // Admin analytics endpoint
-adminRouter.get('/analytics', requireAuth, async (_req, res) => {
+adminRouter.get('/analytics', requireRole(['admin']), async (_req, res) => {
   if (pool) {
     try {
       const ordersRes = await pool.query("SELECT COUNT(*) as count, SUM(total) as revenue FROM orders WHERE created_at::date = CURRENT_DATE");
@@ -78,7 +78,7 @@ adminRouter.get('/analytics', requireAuth, async (_req, res) => {
 });
 
 // Admin list users endpoint
-adminRouter.get('/users', requireAuth, async (_req, res) => {
+adminRouter.get('/users', requireRole(['admin']), async (_req, res) => {
   if (pool) {
     try {
       const result = await pool.query(
@@ -102,7 +102,7 @@ adminRouter.get('/users', requireAuth, async (_req, res) => {
 });
 
 // Admin patch user role endpoint
-adminRouter.patch('/users/:userId/role', requireAuth, async (req, res) => {
+adminRouter.patch('/users/:userId/role', requireRole(['admin']), async (req, res) => {
   const { userId } = req.params;
   const { role } = req.body;
 

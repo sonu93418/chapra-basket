@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useFonts,
   BeVietnamPro_400Regular,
@@ -15,12 +15,42 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '../src/store';
 import { useSocket } from '../src/hooks/useSocket';
+import { useAppDispatch } from '../src/hooks/useAppDispatch';
+import { loadSession } from '../src/utils/storage';
+import { loginSuccess } from '../src/features/auth/authSlice';
 
 SplashScreen.preventAutoHideAsync();
 
 function RealtimeBridge() {
   useSocket();
   return null;
+}
+
+function AppInitializer({ children }: { children: React.ReactNode }) {
+  const dispatch = useAppDispatch();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const session = await loadSession();
+        if (session) {
+          dispatch(loginSuccess(session));
+        }
+      } catch (err) {
+        console.warn('[Hydration] Failed to load persisted session:', err);
+      } finally {
+        setHydrated(true);
+      }
+    };
+    hydrate();
+  }, [dispatch]);
+
+  if (!hydrated) {
+    return null;
+  }
+
+  return <>{children}</>;
 }
 
 export default function RootLayout() {
@@ -45,16 +75,18 @@ export default function RootLayout() {
       {/* @ts-ignore — style prop exists at runtime but was removed from GestureHandlerRootViewProps types */}
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <RealtimeBridge />
-          <StatusBar style="auto" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(customer)" />
-            <Stack.Screen name="(rider)" />
-            <Stack.Screen name="(admin)" />
-            <Stack.Screen name="(store)" />
-          </Stack>
+          <AppInitializer>
+            <RealtimeBridge />
+            <StatusBar style="auto" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(customer)" />
+              <Stack.Screen name="(rider)" />
+              <Stack.Screen name="(admin)" />
+              <Stack.Screen name="(store)" />
+            </Stack>
+          </AppInitializer>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </Provider>

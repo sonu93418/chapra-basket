@@ -2,6 +2,9 @@
  * Chapra Basket — Constants
  * Socket events, app config, endpoints
  */
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
 
 // ─── App Config ──────────────────────────────────────────────────────────────
 export const APP_CONFIG = {
@@ -53,7 +56,19 @@ export const SOCKET_EVENTS = {
 } as const;
 
 // ─── API Endpoints ─────────────────────────────────────────────────────────
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const getHostUri = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:3000/api/v1`;
+  }
+  return Platform.OS === 'android' ? 'http://10.0.2.2:3000/api/v1' : 'http://localhost:3000/api/v1';
+};
+
+export const API_BASE_URL = getHostUri();
 
 export const ENDPOINTS = {
   // Auth

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { Colors, Radius, Spacing, Shadows } from '../../src/theme';
 import { CATEGORIES } from '../../src/data/mockData';
 import {
@@ -35,6 +36,19 @@ const CAT_ICONS: Record<string, any> = {
   electronics: Zap,
   stationery: Briefcase,
   'personal-care': ShoppingBag,
+};
+
+const CATEGORY_IMAGES: Record<string, any> = {
+  grocery: require('../../assets/categories/grocery.png'),
+  fruits: require('../../assets/categories/fruits.png'),
+  vegetables: require('../../assets/categories/vegetables.png'),
+  dairy: require('../../assets/categories/dairy.png'),
+  medicines: require('../../assets/categories/medicines.png'),
+  snacks: require('../../assets/categories/snacks.png'),
+  beverages: require('../../assets/categories/beverages.png'),
+  electronics: require('../../assets/categories/electronics.png'),
+  stationery: require('../../assets/categories/stationery.png'),
+  'personal-care': require('../../assets/categories/personal-care.png'),
 };
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -75,17 +89,25 @@ export default function CategoriesScreen() {
               onPress={() => router.push(`/category/${item.slug}` as any)}
               activeOpacity={0.85}
             >
-              <LinearGradient
-                colors={[from, to]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={styles.iconBg}
-              >
-                {React.createElement(IconComp, {
-                  size: 32,
-                  color: Colors.primaryDark,
-                  strokeWidth: 2,
-                })}
-              </LinearGradient>
+              {CATEGORY_IMAGES[item.slug] ? (
+                <Image
+                  source={CATEGORY_IMAGES[item.slug]}
+                  style={styles.iconBg}
+                  contentFit="cover"
+                />
+              ) : (
+                <LinearGradient
+                  colors={[from, to]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={styles.iconBg}
+                >
+                  {React.createElement(IconComp, {
+                    size: 32,
+                    color: Colors.primaryDark,
+                    strokeWidth: 2,
+                  })}
+                </LinearGradient>
+              )}
               <Text style={styles.name}>{item.name}</Text>
               <View style={styles.countRow}>
                 <Text style={styles.count}>{item.productCount} items</Text>

@@ -6,6 +6,7 @@
   "dependencies": {
     "@expo-google-fonts/be-vietnam-pro": "^0.4.1",
     "@gorhom/bottom-sheet": "^5.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@reduxjs/toolkit": "^2.3.0",
     "@types/react": "~19.2.10",
     "expo": "~55.0.0",
