@@ -17,4 +17,6 @@ addressesRouter.patch('/default', setDefaultAddress);
 addressesRouter.get('/', listAddresses);
 addressesRouter.post('/', createAddress);
 addressesRouter.patch('/:id', updateAddress);
+addressesRouter.put('/:id', updateAddress);
+addressesRouter.patch('/:id/default', setDefaultAddress);
 addressesRouter.delete('/:id', deleteAddress);

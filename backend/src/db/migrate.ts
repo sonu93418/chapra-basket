@@ -1,9 +1,8 @@
 import pg from 'pg';
 
-const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/blink_box';
-const pool = new pg.Pool({ connectionString });
-
 const sql = `
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS otp_verifications (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   phone varchar(20) NOT NULL,
@@ -82,9 +81,11 @@ CREATE TABLE IF NOT EXISTS addresses (
   state varchar(80) NOT NULL,
   postal_code varchar(12) NOT NULL,
   country varchar(80) NOT NULL DEFAULT 'India',
-  latitude numeric(10, 7) NOT NULL,
-  longitude numeric(10, 7) NOT NULL,
+  latitude numeric(10, 7),
+  longitude numeric(10, 7),
   is_default boolean NOT NULL DEFAULT false,
+  address_type varchar(30) NOT NULL DEFAULT 'Home',
+  delivery_instructions text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -113,9 +114,37 @@ CREATE TABLE IF NOT EXISTS banners (
 );
 
 CREATE INDEX IF NOT EXISTS idx_banners_active_order ON banners(is_active, sort_order);
+
+-- ALTER STATEMENTS TO PATCH EXISTING INSTANCES
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS address_type varchar(30) DEFAULT 'Home';
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS delivery_instructions text;
+ALTER TABLE addresses ALTER COLUMN latitude DROP NOT NULL;
+ALTER TABLE addresses ALTER COLUMN longitude DROP NOT NULL;
 `;
 
-async function migrate() {
+export async function runMigrations() {
+  const databaseUrl = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/blink_box';
+  const dbName = databaseUrl.match(/\/([^/?#]+)/)?.[1] || 'blink_box';
+
+  if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
+    const parentUrl = databaseUrl.replace(/\/([^/]+)$/, '/postgres');
+    const parentPool = new pg.Pool({ connectionString: parentUrl });
+    try {
+      const client = await parentPool.connect();
+      const checkDb = await client.query('SELECT 1 FROM pg_database WHERE datname = $1', [dbName]);
+      if (checkDb.rows.length === 0) {
+        console.log(`MIGRATION: Creating database "${dbName}"...`);
+        await client.query(`CREATE DATABASE "${dbName.replace(/"/g, '""')}"`);
+      }
+      client.release();
+    } catch (err: any) {
+      console.warn('MIGRATION: Database auto-creation check failed:', err.message);
+    } finally {
+      await parentPool.end();
+    }
+  }
+
+  const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
     const client = await pool.connect();
     console.log('MIGRATION: CONNECTED TO POSTGRES');
@@ -129,4 +158,12 @@ async function migrate() {
   }
 }
 
-migrate();
+import { fileURLToPath } from 'url';
+const isMain = process.argv[1] && (
+  fileURLToPath(import.meta.url) === process.argv[1] ||
+  process.argv[1].endsWith('migrate.ts') ||
+  process.argv[1].endsWith('migrate.js')
+);
+if (isMain) {
+  runMigrations();
+}

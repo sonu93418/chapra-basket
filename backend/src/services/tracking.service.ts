@@ -25,8 +25,8 @@ export async function getTracking(orderId: string) {
 
   const storeLat = 25.7782;
   const storeLng = 84.7352;
-  const customerLat = demoAddress.latitude;
-  const customerLng = demoAddress.longitude;
+  const customerLat = order.address.latitude ?? 25.774;
+  const customerLng = order.address.longitude ?? 84.7374;
 
   let computedEta = order.estimatedMinutes ?? 15;
 

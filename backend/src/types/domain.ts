@@ -63,9 +63,11 @@ export interface Address {
   state: string;
   postalCode: string;
   country: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   isDefault: boolean;
+  addressType?: 'Home' | 'Work' | 'Other' | string;
+  deliveryInstructions?: string;
   createdAt?: string;
   updatedAt?: string;
 }

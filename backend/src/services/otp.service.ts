@@ -93,7 +93,7 @@ export async function verifyOtp(
   role: UserRole = 'customer',
   ipAddress?: string,
   deviceInfo?: string
-): Promise<{ user: any; accessToken: string; refreshToken: string }> {
+): Promise<{ user: any; accessToken: string; token: string; refreshToken: string }> {
   const codeHash = hashSha256(code);
   let isVerified = false;
   let user: any = null;
@@ -254,7 +254,7 @@ export async function verifyOtp(
     isActive: true,
   });
 
-  return { user, accessToken, refreshToken };
+  return { user, accessToken, token: accessToken, refreshToken };
 }
 
 // 3. Refresh Session
@@ -262,7 +262,7 @@ export async function refreshSession(
   refreshToken: string,
   ipAddress?: string,
   deviceInfo?: string
-): Promise<{ user: any; accessToken: string; refreshToken: string }> {
+): Promise<{ user: any; accessToken: string; token: string; refreshToken: string }> {
   const tokenHash = hashSha256(refreshToken);
   let userId: string | null = null;
 
@@ -356,7 +356,7 @@ export async function refreshSession(
     isActive: true,
   });
 
-  return { user, accessToken, refreshToken: newRefreshToken };
+  return { user, accessToken, token: accessToken, refreshToken: newRefreshToken };
 }
 
 // 4. Logout Session

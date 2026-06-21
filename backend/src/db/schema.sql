@@ -30,9 +30,11 @@ create table addresses (
   state varchar(80) not null,
   postal_code varchar(12) not null,
   country varchar(80) not null default 'India',
-  latitude numeric(10, 7) not null,
-  longitude numeric(10, 7) not null,
+  latitude numeric(10, 7),
+  longitude numeric(10, 7),
   is_default boolean not null default false,
+  address_type varchar(30) not null default 'Home',
+  delivery_instructions text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

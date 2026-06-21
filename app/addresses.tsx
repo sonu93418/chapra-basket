@@ -44,6 +44,9 @@ export default function AddressesScreen() {
   const [latitude, setLatitude] = useState(25.774);
   const [longitude, setLongitude] = useState(84.7374);
   const [isDefault, setIsDefault] = useState(false);
+  const [addressType, setAddressType] = useState<'Home' | 'Work' | 'Other'>('Home');
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const [detectingLocation, setDetectingLocation] = useState(false);
 
@@ -61,6 +64,9 @@ export default function AddressesScreen() {
     setLongitude(84.7374);
     setIsDefault(false);
     setEditingId(null);
+    setAddressType('Home');
+    setDeliveryInstructions('');
+    setSaving(false);
   };
 
   const handleOpenAdd = () => {
@@ -78,9 +84,11 @@ export default function AddressesScreen() {
     setState(addr.state);
     setPostalCode(addr.postalCode);
     setCountry(addr.country || 'India');
-    setLatitude(addr.latitude);
-    setLongitude(addr.longitude);
+    setLatitude(addr.latitude ?? 25.774);
+    setLongitude(addr.longitude ?? 84.7374);
     setIsDefault(addr.isDefault);
+    setAddressType((addr.addressType as 'Home' | 'Work' | 'Other') || 'Home');
+    setDeliveryInstructions(addr.deliveryInstructions || '');
     setEditingId(addr.id);
     setModalVisible(true);
   };
@@ -128,25 +136,51 @@ export default function AddressesScreen() {
   };
 
   const handleSave = async () => {
-    if (!fullName.trim() || !phoneNumber.trim() || !addressLine1.trim() || !postalCode.trim()) {
-      Alert.alert('Validation Error', 'Please complete all required fields (Name, Phone, Address Line 1, Pincode).');
+    const trimmedName = fullName.trim();
+    const trimmedPhone = phoneNumber.trim();
+    const trimmedLine1 = addressLine1.trim();
+    const trimmedLine2 = addressLine2.trim();
+    const trimmedLandmark = landmark.trim();
+    const trimmedCity = city.trim();
+    const trimmedState = state.trim();
+    const trimmedPincode = postalCode.trim();
+
+    if (!trimmedName || !trimmedPhone || !trimmedLine1 || !trimmedCity || !trimmedState || !trimmedPincode) {
+      Alert.alert('Validation Error', 'Please complete all required fields.');
       return;
     }
 
+    // Phone number validation (Indian 10-digit mobile)
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(trimmedPhone)) {
+      Alert.alert('Validation Error', 'Please enter a valid 10-digit Indian phone number starting with 6-9.');
+      return;
+    }
+
+    // Pincode validation (6-digit Indian PIN)
+    const pincodeRegex = /^\d{6}$/;
+    if (!pincodeRegex.test(trimmedPincode)) {
+      Alert.alert('Validation Error', 'Please enter a valid 6-digit Indian PIN code.');
+      return;
+    }
+
+    setSaving(true);
     try {
       const payload = {
-        fullName,
-        phoneNumber,
-        addressLine1,
-        addressLine2: addressLine2 || undefined,
-        landmark: landmark || undefined,
-        city,
-        state,
-        postalCode,
-        country,
-        latitude,
-        longitude,
+        fullName: trimmedName,
+        phoneNumber: trimmedPhone,
+        addressLine1: trimmedLine1,
+        addressLine2: trimmedLine2 || undefined,
+        landmark: trimmedLandmark || undefined,
+        city: trimmedCity,
+        state: trimmedState,
+        postalCode: trimmedPincode,
+        country: country.trim(),
+        latitude: latitude !== 25.774 || longitude !== 84.7374 ? latitude : undefined,
+        longitude: latitude !== 25.774 || longitude !== 84.7374 ? longitude : undefined,
         isDefault,
+        addressType,
+        deliveryInstructions: deliveryInstructions.trim() || undefined,
       };
 
       if (editingId) {
@@ -158,6 +192,8 @@ export default function AddressesScreen() {
       resetForm();
     } catch (err: any) {
       Alert.alert('Error Saving', err?.data?.error || 'Failed to save address details.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -228,10 +264,21 @@ export default function AddressesScreen() {
               
               <View style={styles.cardHeader}>
                 <View style={styles.iconBox}>
-                  <MapPin size={18} color={Colors.primary} strokeWidth={2} />
+                  {item.addressType === 'Home' ? (
+                    <Home size={18} color={Colors.primary} strokeWidth={2} />
+                  ) : item.addressType === 'Work' ? (
+                    <Briefcase size={18} color={Colors.primary} strokeWidth={2} />
+                  ) : (
+                    <MapPin size={18} color={Colors.primary} strokeWidth={2} />
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>{item.fullName} · {item.phoneNumber}</Text>
+                  <View style={styles.cardLabelRow}>
+                    <Text style={styles.label}>{item.fullName} · {item.phoneNumber}</Text>
+                    <View style={styles.typeBadge}>
+                      <Text style={styles.typeBadgeText}>{item.addressType || 'Home'}</Text>
+                    </View>
+                  </View>
                   <Text style={styles.addressText}>{item.addressLine1}</Text>
                   {item.addressLine2 ? <Text style={styles.addressText}>{item.addressLine2}</Text> : null}
                   {item.landmark && (
@@ -241,6 +288,12 @@ export default function AddressesScreen() {
                     </Text>
                   )}
                   <Text style={styles.city}>{item.city}, {item.state} — {item.postalCode}</Text>
+                  {!!item.deliveryInstructions && (
+                    <Text style={styles.instructionsText}>
+                      <Text style={{ fontFamily: 'BeVietnamPro-SemiBold' }}>Instructions: </Text>
+                      {item.deliveryInstructions}
+                    </Text>
+                  )}
                 </View>
               </View>
 
@@ -399,6 +452,50 @@ export default function AddressesScreen() {
                 onChangeText={setPostalCode}
               />
 
+              <Text style={styles.formLabel}>Address Type</Text>
+              <View style={styles.typeContainer}>
+                {(['Home', 'Work', 'Other'] as const).map((type) => {
+                  const isSelected = addressType === type;
+                  const IconComponent = type === 'Home' ? Home : type === 'Work' ? Briefcase : MapPin;
+                  return (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.typeBtn,
+                        isSelected && styles.typeBtnSelected,
+                      ]}
+                      onPress={() => setAddressType(type)}
+                      activeOpacity={0.7}
+                    >
+                      <IconComponent
+                        size={14}
+                        color={isSelected ? Colors.white : Colors.textSecondary}
+                        strokeWidth={2.5}
+                      />
+                      <Text
+                        style={[
+                          styles.typeBtnText,
+                          isSelected && styles.typeBtnTextSelected,
+                        ]}
+                      >
+                        {type}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.formLabel}>Delivery Instructions (Optional)</Text>
+              <TextInput
+                style={[styles.textInput, styles.multilineInput]}
+                placeholder="e.g. Ring the bell, leave at gate, call on arrival"
+                placeholderTextColor={Colors.textPlaceholder}
+                multiline
+                numberOfLines={3}
+                value={deliveryInstructions}
+                onChangeText={setDeliveryInstructions}
+              />
+
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>Set as Default Delivery Address</Text>
                 <Switch
@@ -409,8 +506,17 @@ export default function AddressesScreen() {
                 />
               </View>
 
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.88}>
-                <Text style={styles.saveBtnText}>Save Address</Text>
+              <TouchableOpacity
+                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                onPress={handleSave}
+                activeOpacity={0.88}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color={Colors.white} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Address</Text>
+                )}
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -468,4 +574,15 @@ const styles = StyleSheet.create({
   switchLabel: { fontFamily: 'BeVietnamPro-Medium', fontSize: 14, color: Colors.textPrimary },
   saveBtn: { backgroundColor: Colors.primary, paddingVertical: 14, borderRadius: Radius.xl, alignItems: 'center', marginTop: 14 },
   saveBtnText: { fontFamily: 'BeVietnamPro-Bold', color: Colors.white, fontSize: 15 },
+  saveBtnDisabled: { opacity: 0.6 },
+  typeContainer: { flexDirection: 'row', gap: 10, marginVertical: 6 },
+  typeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, paddingVertical: 10, borderRadius: Radius.lg, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.white, justifyContent: 'center' },
+  typeBtnSelected: { borderColor: Colors.primary, backgroundColor: Colors.primary },
+  typeBtnText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 13, color: Colors.textSecondary },
+  typeBtnTextSelected: { color: Colors.white },
+  multilineInput: { minHeight: 70, textAlignVertical: 'top', paddingTop: 10 },
+  cardLabelRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  typeBadge: { backgroundColor: Colors.surfaceVariant, borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
+  typeBadgeText: { fontFamily: 'BeVietnamPro-SemiBold', fontSize: 10, color: Colors.textSecondary },
+  instructionsText: { fontFamily: 'BeVietnamPro-Regular', fontSize: 12, color: Colors.textMuted, marginTop: 4 },
 });
